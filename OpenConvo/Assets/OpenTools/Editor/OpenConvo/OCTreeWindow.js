@@ -13,10 +13,11 @@ public class OCTreeWindow extends EditorWindow {
 		}	
 	}
 
-	public var tree : OCTree;
-	public var rects : Rect [,] = new Rect[999,999];
-	public var scrollPos : Vector2;
-	public var connecting : NodeConnection;
+	private var tree : OCTree;
+	private var rects : Rect [,] = new Rect[999,999];
+	private var scrollPos : Vector2;
+	private var connecting : NodeConnection;
+	private var drawnNodes : List.< OCNode > = new List.< OCNode > ();
 
    	static function ShowEditor ( tree : OCTree ) {
 		var editor : OCTreeWindow = EditorWindow.GetWindow.<OCTreeWindow>();
@@ -24,15 +25,23 @@ public class OCTreeWindow extends EditorWindow {
     	}
 
 	public function OnGUI() {
+		if ( !tree ) { return; }
+	
+		drawnNodes.Clear ();
+
 		BeginWindows();
 	
 		if ( GUILayout.Button ( "Clear" ) ) {
-			tree.rootNodes[tree.currentRoot].connectedTo = null;
+			tree.rootNodes[tree.currentRoot].connectedTo = -1;
 		}
 
 		scrollPos = GUILayout.BeginScrollView ( scrollPos );
 	
-		tree.rootNodes[tree.currentRoot].connectedTo = DrawNode ( tree.rootNodes[tree.currentRoot].connectedTo, 0, 0, new Rect ( 20, 20, 0, 0 ) );
+		DrawNode ( tree.rootNodes[tree.currentRoot].connectedTo, 0, 0, new Rect ( 20, 20, 0, 0 ) );
+		
+		if ( Event.current.type == EventType.MouseDown ) {
+			connecting = null;
+		}
 
 		GUILayout.EndScrollView ();
 		
@@ -97,7 +106,8 @@ public class OCTreeWindow extends EditorWindow {
 		return newNode;
 	}
 
-	private function DrawNode ( node : OCNode, x : int, y : int, outRect : Rect ) : OCNode {
+	private function DrawNode ( n : int, x : int, y : int, outRect : Rect ) {
+		var node : OCNode = tree.childNodes[n];
 		var rect : Rect = rects[x,y];
 			
 		if ( rect.width <= 0 ) { rect.width = 200; }
@@ -129,7 +139,8 @@ public class OCTreeWindow extends EditorWindow {
 			
 			if ( GUI.Button ( inRect, "" ) ) {
 				if ( connecting ) {
-
+					connecting.node.connectedTo[connecting.output] = n;
+					connecting = null;
 				}
 			}
 			
@@ -168,13 +179,13 @@ public class OCTreeWindow extends EditorWindow {
 
 					connections = new Rect [ speak.lines.Length ];
 					
-					var tmpConnect : List.< OCNode > = new List.< OCNode > ();
+					var tmpConnect : List.< int > = new List.< int > ();
 					
 					for ( var i : int = 0; i < connections.Length; i++ ) {
 						if ( i < speak.connectedTo.Length ) {
 							tmpConnect.Add ( speak.connectedTo[i] );
 						} else {
-							tmpConnect.Add ( new OCNode () );
+							tmpConnect.Add ( -1 );
 						}
 					}
 
@@ -233,13 +244,14 @@ public class OCTreeWindow extends EditorWindow {
 				connections[i] = new Rect ( rect.x + 10 + connections[i].x, rect.yMax - 7, 14, 14 );
 				
 				if ( GUI.Button ( connections[i], "" ) ) {
-					connecting = new NodeConnection ( node.connectedTo[i], i, connections[i] );
+					connecting = new NodeConnection ( node, i, connections[i] );
+					node.connectedTo[i] = -1;
 				}
 				
 				if ( node.connectedTo[i] == null || node.connectedTo[i].GetType() == OCNode ) {
 					GUI.backgroundColor = Color.green;
 					if ( GUI.Button ( new Rect ( connections[i].x, connections[i].y + 20, 14, 14 ), "" ) ) {
-						node.connectedTo[i] = new OCSpeak ();
+						node.connectedTo[i] = -1;
 					}
 					GUI.backgroundColor = Color.white;
 
@@ -248,12 +260,12 @@ public class OCTreeWindow extends EditorWindow {
 
 		
 			for ( i = 0; i < node.connectedTo.Length; i++ ) {
-				node.connectedTo[i] = DrawNode ( node.connectedTo[i], x + i, y + 1, connections[i] );
+				DrawNode ( node.connectedTo[i], x + i, y + 1, connections[i] );
 			}
 			
 			DrawNodeCurve ( outRect.center, inRect.center );
 
-			if ( connecting ) {
+			if ( connecting && connecting.node ) {
 				DrawNodeCurve ( connecting.rect.center, Event.current.mousePosition );
 			}
 
@@ -261,7 +273,7 @@ public class OCTreeWindow extends EditorWindow {
 
 		rects[x,y] = rect;
 
-		return node;
+		tree.childNodes[i] = node;
 	}
 
     	private function DrawNodeCurve( start : Vector2, end : Vector2) {

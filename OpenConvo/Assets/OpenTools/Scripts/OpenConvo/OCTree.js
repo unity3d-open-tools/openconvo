@@ -2,6 +2,7 @@
 
 public class OCTree extends MonoBehaviour {
 	public var rootNodes : OCRootNode[];
+	public var childNodes : OCNode [];
 	public var currentRoot : int;
 	public var speakers : GameObject[] = new GameObject[1];
 	public var eventHandler : GameObject;
@@ -29,23 +30,32 @@ public class OCTree extends MonoBehaviour {
 public class OCRootNode {
 	public var auto : boolean = false;
 	public var passive : boolean = false;
-	public var connectedTo : OCNode;
+	public var connectedTo : int;
 
 	public function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
 		output.AddField ( "auto", auto );
 		output.AddField ( "passive", passive );
-		output.AddField ( "connectedTo", connectedTo.Serialize () );
+		output.AddField ( "connectedTo", connectedTo );
 		
 		return output;
 	}
 }
 
 public class OCNode {
-	public var connectedTo : OCNode[] = new OCNode[0];
+	public var connectedTo : int[] = new int[0];
 
 	public function Serialize () : JSONObject {}
+	public function SerializeConnections () : JSONObject {
+		var output : JSONObject = new JSONObject ( JSONObject.Type.ARRAY );
+
+		for ( var i : int = 0; i < connectedTo.Length; i++ ) {
+			output.Add ( connectedTo[i] );
+		}
+
+		return output;
+	}	
 }
 
 public class OCSpeak extends OCNode {
@@ -53,7 +63,7 @@ public class OCSpeak extends OCNode {
 	public var lines : String[] = new String[1];
 
 	function OCSpeak () {
-		connectedTo = new OCNode[1];
+		connectedTo = new int[1];
 	}
 
  	override function Serialize () : JSONObject {
@@ -68,6 +78,7 @@ public class OCSpeak extends OCNode {
 		}
 
 		output.AddField ( "lines", l );
+		output.AddField ( "connectedTo", SerializeConnections () );
 
 		return output;
 	}
@@ -76,13 +87,18 @@ public class OCSpeak extends OCNode {
 public class OCEvent extends OCNode {
 	public var message : String;
 	public var argument : String;
- 	
+ 
+	function OCEvent () {
+		connectedTo = new int[1];
+	}
+
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
 		output.AddField ( "type", "OCEvent" );
 		output.AddField ( "message", message );
 		output.AddField ( "argument", argument );
+		output.AddField ( "connectedTo", SerializeConnections () );
 		
 		return output;
 	}
@@ -96,6 +112,7 @@ public class OCJump extends OCNode {
 
 		output.AddField ( "type", "OCJump" );
 		output.AddField ( "rootNode", rootNode );
+		output.AddField ( "connectedTo", SerializeConnections () );
 		
 		return output;
 	}
@@ -105,12 +122,17 @@ public class OCSetFlag extends OCNode {
 	public var flag : String;
 	public var b : boolean;
 	
+	function OCSetFlag () {
+		connectedTo = new int[1];
+	}
+
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
 		output.AddField ( "type", "OCSetFlag" );
 		output.AddField ( "flag", flag );
 		output.AddField ( "boolean", b );
+		output.AddField ( "connectedTo", SerializeConnections () );
 		
 		return output;
 	}
@@ -119,11 +141,16 @@ public class OCSetFlag extends OCNode {
 public class OCGetFlag extends OCNode {
 	public var flag : String;
 	
+	function OCGetFlag () {
+		connectedTo = new int[2];
+	}
+	
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
 		output.AddField ( "type", "OCGetFlag" );
 		output.AddField ( "flag", flag );
+		output.AddField ( "connectedTo", SerializeConnections () );
 		
 		return output;
 	}

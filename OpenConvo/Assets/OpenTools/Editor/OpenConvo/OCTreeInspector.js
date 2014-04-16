@@ -25,28 +25,6 @@ public class OCTreeInspector extends Editor {
 	    	}
 	}
 	
-	private function DrawNode ( node : OCNode ) : OCNode {
-		if ( !node ) { 
-			if ( GUILayout.Button ( "+" ) ) {
-				node = new OCNode ();
-			}
-		
-		} else {
-			if ( GUILayout.Button ( node.GetType().ToString().Replace ( "OC", "" ) ) ) {
-				EditorGUILayout.BeginHorizontal ();
-
-				for ( var i : int = 0; i < node.connectedTo.Length; i++ ) {
-					DrawNode ( node.connectedTo[i] );
-				}
-
-				EditorGUILayout.EndHorizontal ();
-			}	
-
-		}
-
-		return node;
-	}
-
 	override function OnInspectorGUI () {
 		var tree : OCTree = target as OCTree;
 
