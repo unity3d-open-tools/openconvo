@@ -1,11 +1,16 @@
 ﻿#pragma strict
 
 public class OCTree extends MonoBehaviour {
-	public var rootNodes : OCRootNode[];
-	public var childNodes : OCNode [];
+	public var rootNodes : OCRootNode[] = new OCRootNode[1];
 	public var currentRoot : int;
 	public var speakers : GameObject[] = new GameObject[1];
 	public var eventHandler : GameObject;
+
+	private static var random : System.Random = new System.Random ();
+
+	public static function CreateID () : int {
+		return random.Next ( 10000, 99999 );
+	}
 
 	public function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
@@ -28,16 +33,79 @@ public class OCTree extends MonoBehaviour {
 }
 
 public class OCRootNode {
-	public var auto : boolean = false;
-	public var passive : boolean = false;
-	public var connectedTo : int;
+	public var tags : String[] = new String[0];
+	public var firstNode : int;
+	public var childNodes : OCNode [] = new OCNode[0];
+
+	public function ClearNodes () {
+		childNodes = new OCNode [0];
+	}
+
+	public function AddNode () : OCNode {
+		var tmpNodes : List.< OCNode > = new List.< OCNode > ();
+		var newNode : OCNode = new OCSpeak ();
+
+		tmpNodes.Add ( newNode );
+
+		childNodes = tmpNodes.ToArray ();
+
+		return newNode;
+	}
+
+	public function AddFirstNode () {
+		var newNode : OCNode = AddNode ();
+
+		firstNode = newNode.id;
+	}
+	
+	public function GetNode ( id : int ) : OCNode {
+		for ( var i : int = 0; i < childNodes.Length; i++ ) {
+			if ( childNodes[i].id == id ) {
+				return childNodes[i];
+			}
+		}
+
+		return null;
+	}
+
+	public function RemoveTag ( id : String ) {
+		var tmpTags : List.< String > = new List.< String > ( tags );
+		
+		if ( tmpTags.Contains ( id ) ) {
+			tmpTags.Remove ( id );
+			tags = tmpTags.ToArray ();
+		}
+	}
+
+	public function SetTag ( id : String ) {
+		var tmpTags : List.< String > = new List.< String > ( tags );
+		
+		if ( !tmpTags.Contains ( id ) ) {
+			tmpTags.Add ( id );
+			tags = tmpTags.ToArray ();
+		}
+	}
+	
+	public function GetTag ( id : String ) : boolean {
+		for ( var i : int = 0; i < tags.Length; i++ ) {
+			if ( tags[i] == id ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	public function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
+		var t : JSONObject = new JSONObject ( JSONObject.Type.ARRAY );
 
-		output.AddField ( "auto", auto );
-		output.AddField ( "passive", passive );
-		output.AddField ( "connectedTo", connectedTo );
+		for ( var i : int = 0; i < tags.Length; i++ ) {
+			t.Add ( tags[i] );
+		}
+
+		output.AddField ( "tags", t );
+		output.AddField ( "firstNode", firstNode );
 		
 		return output;
 	}
@@ -45,6 +113,7 @@ public class OCRootNode {
 
 public class OCNode {
 	public var connectedTo : int[] = new int[0];
+	public var id : int;
 
 	public function Serialize () : JSONObject {}
 	public function SerializeConnections () : JSONObject {
@@ -64,12 +133,14 @@ public class OCSpeak extends OCNode {
 
 	function OCSpeak () {
 		connectedTo = new int[1];
+		id = OCTree.CreateID ();
 	}
 
  	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 		var l : JSONObject = new JSONObject ( JSONObject.Type.ARRAY );
 
+		output.AddField ( "id", id );
 		output.AddField ( "type", "OCSpeak" );
 		output.AddField ( "speaker", speaker );
 		
@@ -90,11 +161,13 @@ public class OCEvent extends OCNode {
  
 	function OCEvent () {
 		connectedTo = new int[1];
+		id = OCTree.CreateID ();
 	}
 
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
+		output.AddField ( "id", id );
 		output.AddField ( "type", "OCEvent" );
 		output.AddField ( "message", message );
 		output.AddField ( "argument", argument );
@@ -110,6 +183,7 @@ public class OCJump extends OCNode {
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
+		output.AddField ( "id", id );
 		output.AddField ( "type", "OCJump" );
 		output.AddField ( "rootNode", rootNode );
 		output.AddField ( "connectedTo", SerializeConnections () );
@@ -124,11 +198,13 @@ public class OCSetFlag extends OCNode {
 	
 	function OCSetFlag () {
 		connectedTo = new int[1];
+		id = OCTree.CreateID ();
 	}
 
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
+		output.AddField ( "id", id );
 		output.AddField ( "type", "OCSetFlag" );
 		output.AddField ( "flag", flag );
 		output.AddField ( "boolean", b );
@@ -143,11 +219,13 @@ public class OCGetFlag extends OCNode {
 	
 	function OCGetFlag () {
 		connectedTo = new int[2];
+		id = OCTree.CreateID ();
 	}
 	
 	override function Serialize () : JSONObject {
 		var output : JSONObject = new JSONObject ( JSONObject.Type.OBJECT );
 
+		output.AddField ( "id", id );
 		output.AddField ( "type", "OCGetFlag" );
 		output.AddField ( "flag", flag );
 		output.AddField ( "connectedTo", SerializeConnections () );

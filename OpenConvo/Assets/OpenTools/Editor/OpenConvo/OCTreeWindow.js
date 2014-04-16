@@ -22,7 +22,7 @@ public class OCTreeWindow extends EditorWindow {
    	static function ShowEditor ( tree : OCTree ) {
 		var editor : OCTreeWindow = EditorWindow.GetWindow.<OCTreeWindow>();
         	editor.tree = tree;
-    	}
+	}
 
 	public function OnGUI() {
 		if ( !tree ) { return; }
@@ -31,13 +31,9 @@ public class OCTreeWindow extends EditorWindow {
 
 		BeginWindows();
 	
-		if ( GUILayout.Button ( "Clear" ) ) {
-			tree.rootNodes[tree.currentRoot].connectedTo = -1;
-		}
-
 		scrollPos = GUILayout.BeginScrollView ( scrollPos );
 	
-		DrawNode ( tree.rootNodes[tree.currentRoot].connectedTo, 0, 0, new Rect ( 20, 20, 0, 0 ) );
+//		DrawNode ( tree.rootNodes[0].connectedTo, 0, 0, new Rect ( 20, 20, 0, 0 ) );
 		
 		if ( Event.current.type == EventType.MouseDown ) {
 			connecting = null;
@@ -106,8 +102,8 @@ public class OCTreeWindow extends EditorWindow {
 		return newNode;
 	}
 
-	private function DrawNode ( n : int, x : int, y : int, outRect : Rect ) {
-		var node : OCNode = tree.childNodes[n];
+	private function DrawNode ( id : int, x : int, y : int, outRect : Rect ) {
+		var node : OCNode = null;//tree.GetNode ( id );
 		var rect : Rect = rects[x,y];
 			
 		if ( rect.width <= 0 ) { rect.width = 200; }
@@ -139,7 +135,7 @@ public class OCTreeWindow extends EditorWindow {
 			
 			if ( GUI.Button ( inRect, "" ) ) {
 				if ( connecting ) {
-					connecting.node.connectedTo[connecting.output] = n;
+					connecting.node.connectedTo[connecting.output] = id;
 					connecting = null;
 				}
 			}
@@ -147,7 +143,7 @@ public class OCTreeWindow extends EditorWindow {
 			GUI.backgroundColor = Color.red;
 			if ( GUI.Button ( new Rect ( rect.xMax - 27, rect.yMin - 1, 28, 14 ), "x" ) ) {
 				rects[x,y] = new Rect ();
-				return null;
+				return;
 			}
 			GUI.backgroundColor = Color.white;
 
@@ -273,7 +269,7 @@ public class OCTreeWindow extends EditorWindow {
 
 		rects[x,y] = rect;
 
-		tree.childNodes[i] = node;
+	//	tree.childNodes[i] = node;
 	}
 
     	private function DrawNodeCurve( start : Vector2, end : Vector2) {

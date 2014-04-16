@@ -6,7 +6,6 @@ public class OCManager extends MonoBehaviour {
 	public var speakers : GameObject[] = new GameObject [0];
 	public var currentNode : int;
 
-	private var passive : boolean = false;
 	private var speaker : GameObject;
 
 	public static var instance : OCManager;
@@ -26,7 +25,7 @@ public class OCManager extends MonoBehaviour {
 	}
 
 	public function DisplayNode () {
-		var node : OCNode = tree.childNodes [ currentNode ];
+		var node : OCNode = tree.rootNodes[tree.currentRoot].childNodes [ currentNode ];
 		var speak : OCSpeak = node as OCSpeak;
 		var event : OCEvent = node as OCEvent;
 		var jump : OCJump = node as OCJump;
@@ -37,7 +36,7 @@ public class OCManager extends MonoBehaviour {
 
 		if ( jump ) {
 			tree.currentRoot = jump.rootNode;
-			nextNode = tree.rootNodes[tree.currentRoot].connectedTo;
+			nextNode = tree.rootNodes[tree.currentRoot].firstNode;
 
 		} else if ( speak ) {
 			speaker = speakers [ speak.speaker ];
@@ -73,12 +72,12 @@ public class OCManager extends MonoBehaviour {
 	}
 
 	public function PickOption ( i : int ) {
-		currentNode = tree.childNodes[currentNode].connectedTo[i];
+		currentNode = tree.rootNodes[tree.currentRoot].childNodes[currentNode].connectedTo[i];
 		DisplayNode ();
 	}
 
 	public function NextNode () {
-		currentNode = tree.childNodes[currentNode].connectedTo[0];
+		currentNode = tree.rootNodes[tree.currentRoot].childNodes[currentNode].connectedTo[0];
 		DisplayNode ();
 	}
 
@@ -87,8 +86,7 @@ public class OCManager extends MonoBehaviour {
 			this.tree = tree;
 			this.speakers = speakers;
 
-			currentNode = tree.rootNodes[tree.currentRoot].connectedTo;
-			this.passive = tree.rootNodes[tree.currentRoot].passive;
+			currentNode = tree.rootNodes[tree.currentRoot].firstNode;
 			
 			DisplayNode ();
 		}
