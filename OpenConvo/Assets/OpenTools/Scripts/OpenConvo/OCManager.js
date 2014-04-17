@@ -83,6 +83,8 @@ public class OCManager extends MonoBehaviour {
 
 	public function StartConversation ( tree : OCTree, speakers : GameObject[] ) {
 		if ( tree && tree.rootNodes.Length > 0 ) {
+			tree.eventHandler.SendMessage ( "StartConversation" );
+			
 			this.tree = tree;
 			this.speakers = speakers;
 

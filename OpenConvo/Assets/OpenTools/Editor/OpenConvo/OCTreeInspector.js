@@ -34,7 +34,7 @@ public class OCTreeInspector extends Editor {
 	}
 
 	private var editRoot : int = 0;
-	private var showingEditor : boolean = false;
+	private static var showingEditor : boolean = false;
 	private var scrollPos : Vector2;
 	private var nodeTypeStrings : String[] = [ "Speak", "Event", "Jump", "SetFlag", "GetFlag" ];
 	private var nodeContainers : Dictionary.< int, NodeContainer > = new Dictionary.< int, NodeContainer > ();
@@ -345,7 +345,12 @@ public class OCTreeInspector extends Editor {
 
 						// ^ Begin clipping
 						GUI.BeginGroup ( container.rect );
-						GUILayout.BeginArea ( new Rect ( 10, 20, container.rect.width - 20, container.rect.width - 20 ) );
+						var clipRect : Rect = container.rect;
+						clipRect.x = 10;
+						clipRect.y = 20;
+						clipRect.width -= 20;
+						clipRect.height -= 20;
+						GUILayout.BeginArea ( clipRect );
 
 						var speak : OCSpeak = node as OCSpeak;
 
