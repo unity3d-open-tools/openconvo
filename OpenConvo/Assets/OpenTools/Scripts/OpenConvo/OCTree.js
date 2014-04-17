@@ -58,6 +58,18 @@ public class OCRootNode {
 		firstNode = newNode.id;
 	}
 	
+	public function RemoveNode ( id : int ) {
+		var tmpNodes : List.< OCNode > = new List.< OCNode > ( childNodes );
+
+		for ( var i : int = 0; i < tmpNodes.Count; i++ ) {
+			if ( tmpNodes[i].id == id ) {
+				tmpNodes.RemoveAt ( i );
+			}
+		}
+		
+		childNodes = tmpNodes.ToArray ();
+	}
+
 	public function GetNode ( id : int ) : OCNode {
 		for ( var i : int = 0; i < childNodes.Length; i++ ) {
 			if ( childNodes[i].id == id ) {
