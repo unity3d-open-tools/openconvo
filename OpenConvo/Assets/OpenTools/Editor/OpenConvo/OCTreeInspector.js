@@ -288,9 +288,9 @@ public class OCTreeInspector extends Editor {
 						// ^ Remove button
 						GUI.backgroundColor = Color.red;
 						if ( GUI.Button ( new Rect ( container.rect.xMax - 27, container.rect.y - 1, 28, 14 ), "x" ) ) {
-							for ( var c : int = 0; c < node.connectedTo.Length; c++ ) {
-								if ( nodeContainers.ContainsKey ( node.connectedTo[c] ) ) {
-									nodeContainers[node.connectedTo[c]].orphan = true;
+							for ( var c : int = 0; c < container.outputs.Length; c++ ) {
+								if ( container.outputs[c] ) {
+									container.outputs[c].orphan = true;
 								}
 							}
 							
