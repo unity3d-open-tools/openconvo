@@ -16,22 +16,19 @@ public class OCTreeInspector extends Editor {
 
 	private class NodeContainer {
 		public var node : OCNode;
-		public var input : Rect = new Rect();
-		public var outputs : Rect[] = new Rect[0];
-		public var connections : Rect[] = new Rect[0];
+		public var inputRect : Rect;
+		public var input : NodeContainer;
+		public var outputRects : Rect[] = new Rect[0];
+		public var outputs : NodeContainer[] = new NodeContainer[0];
 		public var rect : Rect;
 
-		public function SetOutput ( i : int, rect : Rect ) {
-			if ( i < outputs.Length ) {
-				outputs[i] = rect;
+		function NodeContainer ( node : OCNode ) {
+			this.node = node;
+		}
 
-			} else {
-				var tmpOut : List.< Rect > = new List.< Rect > ( outputs );
-
-				tmpOut.Add ( rect );
-
-				outputs = tmpOut.ToArray ();
-			}
+		public function SetOutputAmount ( n : int ) {
+			outputs = new NodeContainer[n];
+			outputRects = new Rect[n];
 		}
 	}
 
@@ -41,6 +38,8 @@ public class OCTreeInspector extends Editor {
 	private var nodeTypeStrings : String[] = [ "Speak", "Event", "Jump", "SetFlag", "GetFlag" ];
 	private var nodeContainers : Dictionary.< int, NodeContainer > = new Dictionary.< int, NodeContainer > ();
 	private var connecting : NodeConnection;
+	private var nodeDistance : float = 200;
+	private var viewRect : Rect;
 
 	public static function SavePrefab ( target : UnityEngine.Object ) {
 		var selectedGameObject : GameObject;
@@ -120,10 +119,6 @@ public class OCTreeInspector extends Editor {
 		return newNode;
 	}
 
-	function Update () {
-		Repaint ();
-	}
-
 	override function OnInspectorGUI () {
 		var tree : OCTree = target as OCTree;
 
@@ -131,46 +126,52 @@ public class OCTreeInspector extends Editor {
 		for ( var i : int = 0; i < rootNodeStrings.Length; i++ ) {
 			rootNodeStrings[i] = i.ToString();
 		}
+		
+		if ( !showingEditor ) {
+			tree.eventHandler = EditorGUILayout.ObjectField ( "Event handler", tree.eventHandler, typeof ( GameObject ), true ) as GameObject;
+			tree.currentRoot = EditorGUILayout.Popup ( "Current root node", tree.currentRoot, rootNodeStrings );	
+		
+			EditorGUILayout.Space ();
 
-		tree.eventHandler = EditorGUILayout.ObjectField ( "Event handler", tree.eventHandler, typeof ( GameObject ), true ) as GameObject;
-		tree.currentRoot = EditorGUILayout.Popup ( "Current root node", tree.currentRoot, rootNodeStrings );	
-	
-		EditorGUILayout.Space ();
+			EditorGUILayout.LabelField ( "Speakers", EditorStyles.boldLabel );
 
-		EditorGUILayout.LabelField ( "Speakers", EditorStyles.boldLabel );
+			for ( i = 0; i < tree.speakers.Length; i++ ) {
+				EditorGUILayout.BeginHorizontal ();
+				tree.speakers[i] = EditorGUILayout.ObjectField ( i.ToString(), tree.speakers[i], typeof ( GameObject ), true ) as GameObject;
+				
+				GUI.backgroundColor = Color.red;
+				if ( GUILayout.Button ( "x", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
+					var tmpSpk : List.< GameObject > = new List.< GameObject > ( tree.speakers );
 
-		for ( i = 0; i < tree.speakers.Length; i++ ) {
-			EditorGUILayout.BeginHorizontal ();
-			tree.speakers[i] = EditorGUILayout.ObjectField ( i.ToString(), tree.speakers[i], typeof ( GameObject ), true ) as GameObject;
+					tmpSpk.RemoveAt ( i );
+
+					tree.speakers = tmpSpk.ToArray ();
+				}
+				GUI.backgroundColor = Color.white;
+				
+				EditorGUILayout.EndHorizontal ();
+			}
 			
-			GUI.backgroundColor = Color.red;
-			if ( GUILayout.Button ( "x", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
-				var tmpSpk : List.< GameObject > = new List.< GameObject > ( tree.speakers );
+			GUI.backgroundColor = Color.green;
+			if ( GUILayout.Button ( "+", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
+				tmpSpk = new List.< GameObject > ( tree.speakers );
 
-				tmpSpk.RemoveAt ( i );
+				tmpSpk.Add ( null );
 
 				tree.speakers = tmpSpk.ToArray ();
 			}
 			GUI.backgroundColor = Color.white;
-			
-			EditorGUILayout.EndHorizontal ();
+
+			EditorGUILayout.Space ();
 		}
-		
-		GUI.backgroundColor = Color.green;
-		if ( GUILayout.Button ( "+", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
-			tmpSpk = new List.< GameObject > ( tree.speakers );
-
-			tmpSpk.Add ( null );
-
-			tree.speakers = tmpSpk.ToArray ();
-		}
-		GUI.backgroundColor = Color.white;
-
-		EditorGUILayout.Space ();
 
 		showingEditor = EditorGUILayout.Foldout ( showingEditor, "Editor" );
 
 		if ( showingEditor ) {
+			var lblStyle : GUIStyle = new GUIStyle ( GUI.skin.label );
+			lblStyle.alignment = TextAnchor.MiddleCenter;
+			lblStyle.padding.left = 0;
+			
 			// Select root
 			EditorGUILayout.BeginHorizontal ();
 			
@@ -223,15 +224,25 @@ public class OCTreeInspector extends Editor {
 				nodeContainers.Clear ();
 			}
 			GUI.backgroundColor = Color.white;
+
+			EditorGUILayout.LabelField ( "Nodes: " + root.childNodes.Length + ", Containers: " + nodeContainers.Count );
+
 			EditorGUILayout.EndHorizontal ();
 
-			scrollPos = EditorGUILayout.BeginScrollView ( scrollPos );
+			GUILayout.FlexibleSpace();
+
+			var scrollRect : Rect = GUILayoutUtility.GetLastRect ();
+			scrollRect.width = Screen.width;
+
+			scrollPos = GUI.BeginScrollView ( scrollRect, scrollPos, viewRect );
 
 			if ( root.childNodes.Length < 1 ) {
 				GUI.backgroundColor = Color.green;
 				if ( GUI.Button ( new Rect ( 20, 20, 20, 20 ), "+" ) ) {
 					root.AddFirstNode ();
 				}
+				viewRect.xMax = 100;
+				viewRect.yMax = 80;
 				GUI.backgroundColor = Color.white;
 
 			} else {	
@@ -240,19 +251,44 @@ public class OCTreeInspector extends Editor {
 					if ( node == null ) { continue; }
 
 					if ( !nodeContainers.ContainsKey ( node.id ) ) {
-						nodeContainers[node.id] = new NodeContainer ();
+						nodeContainers[node.id] = new NodeContainer ( node );
 
 					} else {
 						// Set container data
 						var container : NodeContainer = nodeContainers[node.id];
 						container.node = node;
-						container.input = new Rect ( container.rect.x - 7, container.rect.y - 7, 14, 14 );
+						container.inputRect = new Rect ( container.rect.x - 7, container.rect.y - 7, 14, 14 );
+						
+						// Set view rect
+						viewRect.xMin = -20;
+						
+						if ( viewRect.xMax < container.rect.xMax ) {
+							viewRect.xMax = container.rect.xMax + 20;
+						}
+						
+						if ( viewRect.yMax < container.rect.yMax ) {
+							viewRect.yMax = container.rect.yMax + 120;
+						}
+						
 
 						// Draw container						
 						GUI.Box ( container.rect, "" );
 						
+						// Debug
+						var debugRect : Rect = new Rect ( container.rect.xMax, container.rect.yMax, 100, 100 );
+						//GUI.Label ( debugRect, "o: " + node.connectedTo.Length + "\n" + "oc: " + container.outputs.Length + "\n" + "or: " + container.outputRects.Length );
+						if ( node.connectedTo.Length > 0 ) {
+							var lbl : String = node.id + "\n\n";
+
+							for ( var lb : int = 0; lb < node.connectedTo.Length; lb++ ) {
+								lbl += lb + ": " + node.connectedTo[lb] + "\n";
+							}
+
+							GUI.Label ( debugRect, lbl );
+						}
+						
 						// ^ Input
-						if ( GUI.Button ( container.input, "" ) ) {
+						if ( GUI.Button ( container.inputRect, "" ) ) {
 							if ( connecting && connecting.container && connecting.container.node.id != node.id ) {
 								connecting.container.node.connectedTo[connecting.output] = node.id;
 								connecting = null;
@@ -273,7 +309,13 @@ public class OCTreeInspector extends Editor {
 						var speak : OCSpeak = node as OCSpeak;
 
 						if ( speak ) {
-							container.rect = new Rect ( 20, 20, speak.lines.length * 240, 80 );
+							var pos : Vector2 = new Vector2 ( container.rect.x, 20 );
+
+							if ( container.input ) {
+								pos.y = container.input.rect.y + nodeDistance;
+							}
+
+							container.rect = new Rect ( pos.x, pos.y, speak.lines.length * 240, 80 );
 
 							EditorGUILayout.BeginHorizontal ();
 							EditorGUILayout.LabelField ( "Speaker", GUILayout.Width ( 60 ) );
@@ -282,21 +324,10 @@ public class OCTreeInspector extends Editor {
 					
 							EditorGUILayout.Space ();
 
-							container.connections = new Rect [ speak.lines.Length ];
-							
-							var tmpConnect : List.< int > = new List.< int > ();
-							
-							for ( var c : int = 0; c < container.connections.Length; c++ ) {
-								if ( c < speak.connectedTo.Length ) {
-									tmpConnect.Add ( speak.connectedTo[c] );
-								} else {
-									tmpConnect.Add ( 0 );
-								}
-							}
-
-							speak.connectedTo = tmpConnect.ToArray();
-
 							EditorGUILayout.BeginHorizontal ();
+
+							node.SetOutputAmount ( speak.lines.Length );
+							container.SetOutputAmount ( node.connectedTo.Length );
 
 							for ( var l : int = 0; l < speak.lines.Length; l++ ) {
 								EditorGUILayout.BeginVertical ();
@@ -304,7 +335,7 @@ public class OCTreeInspector extends Editor {
 								EditorGUILayout.BeginHorizontal ();
 							
 								speak.lines[l] = EditorGUILayout.TextField ( speak.lines[l] );
-								
+
 								if ( l > 0 ) {
 									GUI.backgroundColor = Color.red;
 									if ( GUILayout.Button ( "x", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
@@ -319,7 +350,7 @@ public class OCTreeInspector extends Editor {
 								
 								EditorGUILayout.EndHorizontal ();
 
-								container.SetOutput( l, GUILayoutUtility.GetLastRect() );
+								container.outputRects[l] = GUILayoutUtility.GetLastRect();
 								
 								EditorGUILayout.EndVertical ();
 							}
@@ -340,29 +371,39 @@ public class OCTreeInspector extends Editor {
 						GUI.EndGroup ();
 
 						// ^ Outputs
-						for ( var o : int = 0; o < container.outputs.Length; o++ ) {
-							container.outputs[o] = new Rect ( container.rect.x + 10 + container.outputs[o].x, container.rect.yMax - 7, 14, 14 );
-							if ( GUI.Button ( container.outputs[o], "" ) ) {
+						for ( var o : int = 0; o < container.outputRects.Length; o++ ) {
+							container.outputRects[o] = new Rect ( container.rect.x + 10 + container.outputRects[o].x, container.rect.yMax - 7, 14, 14 );
+							if ( GUI.Button ( container.outputRects[o], "" ) ) {
 								connecting = new NodeConnection ( container, o );
 							}
+							GUI.Label ( container.outputRects[o], o.ToString (), lblStyle );
 
 							var cNode : OCNode = root.GetNode(node.connectedTo[o]);
 
 							if ( cNode ) {
 								var cContainer : NodeContainer = nodeContainers[cNode.id];
-								if ( !cContainer ) { continue; }
-
-								DrawBezierCurve ( container.outputs[o].center, cContainer.input.center );
 							
+								if ( cContainer ) {
+									cContainer.input = container;
+
+									DrawBezierCurve ( container.outputRects[o].center, cContainer.inputRect.center );
+
+									cContainer.rect.x = container.outputRects[o].x - 10;
+								}
+
 							} else {
-								var newRect : Rect = container.outputs[o];
+								var newRect : Rect = container.outputRects[o];
 								newRect.y += 20;
 
+								GUI.backgroundColor = Color.green;
 								if ( GUI.Button ( newRect, "" ) ) {
 									var newNode : OCNode = root.AddNode ();
 									node.connectedTo[o] = newNode.id;
-								}
 
+									Debug.Log ( node.id + " | " + newNode.id );
+								}
+								GUI.Label ( newRect, "+", lblStyle );
+								GUI.backgroundColor = Color.white;
 							}
 						}
 					}
@@ -372,16 +413,15 @@ public class OCTreeInspector extends Editor {
 			
 			// Draw connection bezier
 			if ( connecting && connecting.container == container ) {
-				DrawBezierCurve ( container.outputs[connecting.output].center, Event.current.mousePosition );
+				DrawBezierCurve ( container.outputRects[connecting.output].center, Event.current.mousePosition );
 			}
 		
 			if ( Event.current.type == EventType.MouseDown ) {
 				connecting = null;
 			}
 
-			EditorGUILayout.EndScrollView ();
+			GUI.EndScrollView ();
 		
-			EditorUtility.SetDirty ( target );
 			Repaint ();
 		}
 	}

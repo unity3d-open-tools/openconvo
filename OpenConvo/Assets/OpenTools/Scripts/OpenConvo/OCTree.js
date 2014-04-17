@@ -42,7 +42,7 @@ public class OCRootNode {
 	}
 
 	public function AddNode () : OCNode {
-		var tmpNodes : List.< OCNode > = new List.< OCNode > ();
+		var tmpNodes : List.< OCNode > = new List.< OCNode > ( childNodes );
 		var newNode : OCNode = new OCSpeak ();
 
 		tmpNodes.Add ( newNode );
@@ -114,6 +114,26 @@ public class OCRootNode {
 public class OCNode {
 	public var connectedTo : int[] = new int[0];
 	public var id : int;
+
+	public function SetOutputAmount ( n : int ) {
+		var tmpConnect : List.< int > = new List.< int > ( connectedTo );
+		
+		if ( n > connectedTo.Length ) {
+			for ( var i : int = connectedTo.Length; i < n; i++ ) {
+				tmpConnect.Add ( 0 );
+			}
+
+			connectedTo = tmpConnect.ToArray ();
+		
+		} else if ( n < connectedTo.Length ) {
+			for ( i = n; i < connectedTo.Length; i++ ) {
+				tmpConnect.RemoveAt ( i );
+			}
+			
+			connectedTo = tmpConnect.ToArray ();
+			
+		}
+	}
 
 	public function Serialize () : JSONObject {}
 	public function SerializeConnections () : JSONObject {
