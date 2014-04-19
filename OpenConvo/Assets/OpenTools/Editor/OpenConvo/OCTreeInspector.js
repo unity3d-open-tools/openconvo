@@ -170,8 +170,6 @@ public class OCTreeInspector extends Editor {
 		showingEditor = EditorGUILayout.Foldout ( showingEditor, "Editor" );
 
 		if ( showingEditor ) {
-			var isLayout : boolean = Event.current.type == EventType.Layout;
-			
 			offset.Clear ();
 			
 			var lblStyle : GUIStyle = new GUIStyle ( GUI.skin.label );
@@ -231,7 +229,7 @@ public class OCTreeInspector extends Editor {
 			}
 			GUI.backgroundColor = Color.white;
 
-			//EditorGUILayout.LabelField ( "Nodes: " + root.childNodes.Length + ", Containers: " + nodeContainers.Count );
+			EditorGUILayout.LabelField ( "Nodes: " + root.childNodes.Length + ", Containers: " + nodeContainers.Count );
 
 			EditorGUILayout.EndHorizontal ();
 
@@ -268,21 +266,19 @@ public class OCTreeInspector extends Editor {
 						var container : NodeContainer = nodeContainers[node.id];
 						container.node = node;
 						
-						if ( isLayout ) {
-							container.inputRect = new Rect ( container.rect.x - 7, container.rect.y - 7, 14, 14 );
-							container.dirty = true;
+						container.inputRect = new Rect ( container.rect.x - 7, container.rect.y - 7, 14, 14 );
+						container.dirty = true;
 
-							// Set view rect
-							viewRect.xMin = -20;
-							viewRect.yMin = -20;
+						// Set view rect
+						viewRect.xMin = -20;
+						viewRect.yMin = -20;
+					
+						if ( viewRect.xMax < container.rect.xMax ) {
+							viewRect.xMax = container.rect.xMax + 20;
+						}
 						
-							if ( viewRect.xMax < container.rect.xMax ) {
-								viewRect.xMax = container.rect.xMax + 20;
-							}
-							
-							if ( viewRect.yMax < container.rect.yMax ) {
-								viewRect.yMax = container.rect.yMax + 120;
-							}
+						if ( viewRect.yMax < container.rect.yMax ) {
+							viewRect.yMax = container.rect.yMax + 120;
 						}
 
 						// Draw container						
@@ -302,19 +298,6 @@ public class OCTreeInspector extends Editor {
 						}
 						GUI.backgroundColor = Color.white;
 
-						// Debug
-						var debugRect : Rect = new Rect ( container.rect.xMax, container.rect.yMax, 100, 100 );
-						//GUI.Label ( debugRect, "o: " + node.connectedTo.Length + "\n" + "oc: " + container.outputs.Length + "\n" + "or: " + container.outputRects.Length );
-						//if ( node.connectedTo.Length > 0 ) {
-						//	var lbl : String = node.id + "\n\n";
-
-						//	for ( var lb : int = 0; lb < node.connectedTo.Length; lb++ ) {
-						//		lbl += lb + ": " + node.connectedTo[lb] + "\n";
-						//	}
-
-						//	GUI.Label ( debugRect, lbl );
-						//}
-						
 						// ^ Input
 						if ( container.node.id != root.firstNode ) {
 							if ( GUI.Button ( container.inputRect, "" ) ) {
@@ -331,7 +314,7 @@ public class OCTreeInspector extends Editor {
 							}
 						}
 						
-						if ( isLayout && container.orphan ) {
+						if ( container.orphan ) {
 							container.rect.x = 400;
 							container.rect.y = scrollPos.y + 20;
 
@@ -348,80 +331,55 @@ public class OCTreeInspector extends Editor {
 
 						// ^ Begin clipping
 						GUI.BeginGroup ( container.rect );
-						var clipRect : Rect = container.rect;
-						clipRect.x = 10;
-						clipRect.y = 20;
-						clipRect.width -= 20;
-						clipRect.height -= 20;
-						GUILayout.BeginArea ( clipRect );
 
 						var speak : OCSpeak = node as OCSpeak;
 
+						// ^^^^^ BUG IS THERE!!!!
+
+						// Draw nodes
+						// ^ Speak
 						if ( speak ) {
-							if ( isLayout ) {
-								container.rect.width = speak.lines.length * 240;
-								container.rect.height = 80;
-							}
+							var lineWidth : float = 180;
+							
+							container.rect.width = 50 + speak.lines.length * 190;
+							container.rect.height = 80;
 
-							EditorGUILayout.BeginHorizontal ();
-							EditorGUILayout.LabelField ( "Speaker", GUILayout.Width ( 60 ) );
-							speak.speaker = EditorGUILayout.Popup ( speak.speaker, GetSpeakerStrings ( tree ), GUILayout.Width ( 120 ) );
-							EditorGUILayout.EndHorizontal ();
+							EditorGUI.LabelField ( new Rect ( 10, 20, 60, 20 ), "Speaker" );
+							speak.speaker = EditorGUI.Popup ( new Rect ( 70, 20, 120, 20 ), speak.speaker, GetSpeakerStrings ( tree ) );
 					
-							EditorGUILayout.Space ();
-
-							EditorGUILayout.BeginHorizontal ();
-
 							node.SetOutputAmount ( speak.lines.Length );
 							container.SetOutputAmount ( node.connectedTo.Length );
 
 							for ( var l : int = 0; l < speak.lines.Length; l++ ) {
-								EditorGUILayout.BeginVertical ();
-								
-								EditorGUILayout.BeginHorizontal ();
-							
-								speak.lines[l] = EditorGUILayout.TextField ( speak.lines[l] );
+								var lineRect : Rect = new Rect ( 10 + l * ( lineWidth + 10 ), 40, lineWidth, 20 );
+								speak.lines[l] = EditorGUI.TextField ( lineRect, speak.lines[l] );
 
 								if ( l > 0 ) {
 									GUI.backgroundColor = Color.red;
-									if ( GUILayout.Button ( "x", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
+									if ( GUI.Button ( new Rect ( lineRect.xMax - 28, 62, 28, 14 ), "x" ) ) {
 										var tmpLines : List.<String> = new List.<String>(speak.lines);
 										tmpLines.RemoveAt ( l );
 										speak.lines = tmpLines.ToArray ();
 									}
 									GUI.backgroundColor = Color.white;
-								} else {
-									GUILayout.Space ( 28 );
 								}
 								
-								EditorGUILayout.EndHorizontal ();
-
-								container.outputRects[l] = GUILayoutUtility.GetLastRect();
-								
-								EditorGUILayout.EndVertical ();
+								container.outputRects[l] = new Rect ( container.rect.xMin + lineRect.xMin, container.rect.yMax - 7, 14, 14 );
 							}
 									
 							GUI.backgroundColor = Color.green;
-							if ( GUILayout.Button ( "+", GUILayout.Width ( 28 ), GUILayout.Height ( 14 ) ) ) {
+							if ( GUI.Button ( new Rect ( 10 + speak.lines.Length * ( lineWidth + 10 ), 42, 28, 14 ), "+" ) ) {
 								tmpLines = new List.<String>(speak.lines);
 								tmpLines.Add ( "" );
 								speak.lines = tmpLines.ToArray ();
 							}
 							GUI.backgroundColor = Color.white;
-							
-							EditorGUILayout.EndHorizontal ();
-							
 						}
 						
-						GUILayout.EndArea ();
 						GUI.EndGroup ();
 
 						// ^ Output
 						for ( var o : int = 0; o < container.outputRects.Length; o++ ) {
-							if ( isLayout ) {
-								container.outputRects[o] = new Rect ( container.rect.x + 10 + container.outputRects[o].x, container.rect.yMax - 7, 14, 14 );
-							}
-
 							if ( GUI.Button ( container.outputRects[o], "" ) ) {
 								if ( nodeContainers.ContainsKey ( node.connectedTo[o] ) ) {
 									nodeContainers[node.connectedTo[o]].orphan = true;
@@ -451,10 +409,8 @@ public class OCTreeInspector extends Editor {
 											minimum = offset[cContainer.rect.y];
 										}
 										
-										if ( isLayout ) {
-											cContainer.rect.x = minimum;
-											cContainer.rect.y = container.rect.y + nodeDistance;
-										}
+										cContainer.rect.x = minimum;
+										cContainer.rect.y = container.rect.y + nodeDistance;
 										offset[cContainer.rect.y] = cContainer.rect.xMax + 20;
 									
 										cContainer.dirty = false;
