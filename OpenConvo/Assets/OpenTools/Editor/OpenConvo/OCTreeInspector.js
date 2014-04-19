@@ -229,7 +229,7 @@ public class OCTreeInspector extends Editor {
 			}
 			GUI.backgroundColor = Color.white;
 
-			EditorGUILayout.LabelField ( "Nodes: " + root.childNodes.Length + ", Containers: " + nodeContainers.Count );
+			EditorGUILayout.LabelField ( "Nodes: " + root.nodes.Length + ", Containers: " + nodeContainers.Count );
 
 			EditorGUILayout.EndHorizontal ();
 
@@ -244,7 +244,7 @@ public class OCTreeInspector extends Editor {
 
 			scrollPos = GUI.BeginScrollView ( scrollRect, scrollPos, viewRect );
 
-			if ( root.childNodes.Length < 1 ) {
+			if ( root.nodes.Length < 1 ) {
 				GUI.backgroundColor = Color.green;
 				if ( GUI.Button ( new Rect ( 0, 0, 20, 20 ), "+" ) ) {
 					root.AddFirstNode ();
@@ -254,8 +254,8 @@ public class OCTreeInspector extends Editor {
 				GUI.backgroundColor = Color.white;
 
 			} else {	
-				for ( i = 0; i < root.childNodes.Length; i++ ) {
-					var node : OCNode = root.childNodes[i];
+				for ( i = 0; i < root.nodes.Length; i++ ) {
+					var node : OCNode = root.nodes[i];
 					if ( node == null ) { continue; }
 
 					if ( !nodeContainers.ContainsKey ( node.id ) ) {
@@ -374,6 +374,12 @@ public class OCTreeInspector extends Editor {
 								speak.lines = tmpLines.ToArray ();
 							}
 							GUI.backgroundColor = Color.white;
+					
+						} else {
+							container.rect.width = 200;
+							container.rect.height = 50;
+
+							EditorGUI.LabelField ( new Rect ( 10, 20, 180, 20 ), "Invalid node" );
 						}
 						
 						GUI.EndGroup ();

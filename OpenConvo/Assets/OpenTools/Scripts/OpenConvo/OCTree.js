@@ -35,19 +35,19 @@ public class OCTree extends MonoBehaviour {
 public class OCRootNode {
 	public var tags : String[] = new String[0];
 	public var firstNode : int;
-	public var childNodes : OCNode [] = new OCNode[0];
+	public var nodes : OCNode [] = new OCNode[0];
 
 	public function ClearNodes () {
-		childNodes = new OCNode [0];
+		nodes = new OCNode [0];
 	}
 
 	public function AddNode () : OCNode {
-		var tmpNodes : List.< OCNode > = new List.< OCNode > ( childNodes );
+		var tmpNodes : List.< OCNode > = new List.< OCNode > ( nodes );
 		var newNode : OCNode = new OCSpeak ();
 
 		tmpNodes.Add ( newNode );
 
-		childNodes = tmpNodes.ToArray ();
+		nodes = tmpNodes.ToArray ();
 
 		return newNode;
 	}
@@ -59,7 +59,7 @@ public class OCRootNode {
 	}
 	
 	public function RemoveNode ( id : int ) {
-		var tmpNodes : List.< OCNode > = new List.< OCNode > ( childNodes );
+		var tmpNodes : List.< OCNode > = new List.< OCNode > ( nodes );
 
 		for ( var i : int = 0; i < tmpNodes.Count; i++ ) {
 			if ( tmpNodes[i].id == id ) {
@@ -67,13 +67,13 @@ public class OCRootNode {
 			}
 		}
 		
-		childNodes = tmpNodes.ToArray ();
+		nodes = tmpNodes.ToArray ();
 	}
 
 	public function GetNode ( id : int ) : OCNode {
-		for ( var i : int = 0; i < childNodes.Length; i++ ) {
-			if ( childNodes[i].id == id ) {
-				return childNodes[i];
+		for ( var i : int = 0; i < nodes.Length; i++ ) {
+			if ( nodes[i].id == id ) {
+				return nodes[i];
 			}
 		}
 

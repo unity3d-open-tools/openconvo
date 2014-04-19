@@ -25,7 +25,7 @@ public class OCManager extends MonoBehaviour {
 	}
 
 	public function DisplayNode () {
-		var node : OCNode = tree.rootNodes[tree.currentRoot].childNodes [ currentNode ];
+		var node : OCNode = tree.rootNodes[tree.currentRoot].nodes [ currentNode ];
 		var speak : OCSpeak = node as OCSpeak;
 		var event : OCEvent = node as OCEvent;
 		var jump : OCJump = node as OCJump;
@@ -72,12 +72,12 @@ public class OCManager extends MonoBehaviour {
 	}
 
 	public function PickOption ( i : int ) {
-		currentNode = tree.rootNodes[tree.currentRoot].childNodes[currentNode].connectedTo[i];
+		currentNode = tree.rootNodes[tree.currentRoot].nodes[currentNode].connectedTo[i];
 		DisplayNode ();
 	}
 
 	public function NextNode () {
-		currentNode = tree.rootNodes[tree.currentRoot].childNodes[currentNode].connectedTo[0];
+		currentNode = tree.rootNodes[tree.currentRoot].nodes[currentNode].connectedTo[0];
 		DisplayNode ();
 	}
 
