@@ -26,11 +26,6 @@ public class OCManager extends MonoBehaviour {
 
 	public function DisplayNode () {
 		var node : OCNode = tree.rootNodes[tree.currentRoot].nodes [ currentNode ];
-		var speak : OCSpeak = node as OCSpeak;
-		var event : OCEvent = node as OCEvent;
-		var jump : OCJump = node as OCJump;
-		var setFlag : OCSetFlag = node as OCSetFlag;
-		var getFlag : OCGetFlag = node as OCGetFlag;
 		var wait : boolean = false;
 		var nextNode : int;
 
@@ -38,11 +33,11 @@ public class OCManager extends MonoBehaviour {
 			tree.currentRoot = jump.rootNode;
 			nextNode = tree.rootNodes[tree.currentRoot].firstNode;
 
-		} else if ( speak ) {
-			speaker = speakers [ speak.speaker ];
+		} else if ( node.speak ) {
+			node.speaker = node.speakers [ node.speak.node.speaker ];
 			wait = true;
 
-			tree.eventHandler.SendMessage ( "SetSpeaker", speaker );
+			tree.eventHandler.SendMessage ( "Setnode.speaker", node.speaker );
 
 		} else if ( event ) {
 			tree.eventHandler.SendMessage ( event.message, event.argument, SendMessageOptions.DontRequireReceiver );
