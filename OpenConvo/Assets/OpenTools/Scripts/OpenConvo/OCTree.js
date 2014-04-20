@@ -33,7 +33,8 @@ public class OCRootNode {
 
 	public function AddNode () : OCNode {
 		var tmpNodes : List.< OCNode > = new List.< OCNode > ( nodes );
-		var newNode : OCNode = new OCSpeak ();
+		var newNode : OCNode = new OCNode ();
+		newNode.SetType ( OCNodeType.Speak );
 
 		tmpNodes.Add ( newNode );
 
@@ -110,6 +111,10 @@ public class OCNode {
 	public var setFlag : OCSetFlag;
 	public var getFlag : OCGetFlag;
 
+	function OCNode () {
+		id = OCTree.CreateID ();
+	}
+
 	public function SetOutputAmount ( n : int ) {
 		var tmpConnect : List.< int > = new List.< int > ( connectedTo );
 		
@@ -129,26 +134,59 @@ public class OCNode {
 			
 		}
 	}
+
+	public function Reset () {
+		speak = null;
+		event = null;
+		jump = null;
+		setFlag = null;
+		getFlag = null;
+	}
+
+	public function SetType ( value : OCNodeType ) {
+		if ( value != type ) {
+			type = value;
+			
+			Reset ();
+
+			switch ( type ) {
+				case OCNodeType.Speak:
+					speak = new OCSpeak ();
+					SetOutputAmount ( 1 );
+					break;
+				
+				case OCNodeType.Event:
+					event = new OCEvent ();
+					SetOutputAmount ( 1 );
+					break;
+				
+				case OCNodeType.Jump:
+					jump = new OCJump ();
+					SetOutputAmount ( 0 );
+					break;
+				
+				case OCNodeType.SetFlag:
+					setFlag = new OCSetFlag ();
+					SetOutputAmount ( 1 );
+				
+				case OCNodeType.GetFlag:
+					getFlag = new OCGetFlag ();
+					SetOutputAmount ( 2 );
+					break;
+					break;
+			}
+		}
+	}
 }
 
 public class OCSpeak {
 	public var speaker : int;
 	public var lines : String[] = new String[1];
-
-	function OCSpeak () {
-		connectedTo = new int[1];
-		id = OCTree.CreateID ();
-	}
 }
 
 public class OCEvent {
 	public var message : String;
 	public var argument : String;
- 
-	function OCEvent () {
-		connectedTo = new int[1];
-		id = OCTree.CreateID ();
-	}
 }
 
 public class OCJump {
@@ -158,18 +196,8 @@ public class OCJump {
 public class OCSetFlag {
 	public var flag : String;
 	public var b : boolean;
-	
-	function OCSetFlag () {
-		connectedTo = new int[1];
-		id = OCTree.CreateID ();
-	}
 }
 
 public class OCGetFlag {
 	public var flag : String;
-	
-	function OCGetFlag () {
-		connectedTo = new int[2];
-		id = OCTree.CreateID ();
-	}
 }

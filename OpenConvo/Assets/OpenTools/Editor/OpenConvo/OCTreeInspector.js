@@ -36,7 +36,6 @@ public class OCTreeInspector extends Editor {
 	private var editRoot : int = 0;
 	private static var showingEditor : boolean = false;
 	private var scrollPos : Vector2;
-	private var nodeTypeStrings : String[] = [ "Speak", "Event", "Jump", "SetFlag", "GetFlag" ];
 	private var nodeContainers : Dictionary.< int, NodeContainer > = new Dictionary.< int, NodeContainer > ();
 	private var offset : Dictionary.< float, float > = new Dictionary.< float, float > ();
 	private var connecting : NodeConnection;
@@ -93,31 +92,11 @@ public class OCTreeInspector extends Editor {
 		return -1;
 	}
 	
-	private function NewNodeFromType ( type : String ) : OCNode {
-		var newNode : OCNode;
+	private function NewNodeFromType ( type : OCNodeType ) : OCNode {
+		var newNode : OCNode = new OCNode ();
 
-		switch ( type ) {
-			case "Speak":
-				newNode = new OCSpeak ();
-				break;
-			
-			case "Event":
-				newNode = new OCEvent ();
-				break;
-			
-			case "Jump":
-				newNode = new OCJump ();
-				break;
-			
-			case "SetFlag":
-				newNode = new OCSetFlag ();
-				break;
-			
-			case "GetFlag":
-				newNode = new OCGetFlag ();
-				break;
-		}
-
+		newNode.SetType ( type );
+		
 		return newNode;
 	}
 
@@ -323,7 +302,8 @@ public class OCTreeInspector extends Editor {
 
 
 						// ^ Type
-						var typeIndex : int = GetNodeTypeIndex ( node.GetType().ToString(), nodeTypeStrings );
+						var nodeTypeStrings : String[] = System.Enum.GetNames ( typeof ( OCNodeType ) );
+						var typeIndex : int = node.type;
 						var newTypeIndex : int = 0;
 						var typeRect : Rect = new Rect ( container.rect.x + 20, container.rect.y - 7, 100, 20 );
 
@@ -332,34 +312,34 @@ public class OCTreeInspector extends Editor {
 						// ^ Begin clipping
 						GUI.BeginGroup ( container.rect );
 
-						var speak : OCSpeak = node as OCSpeak;
-
-						// ^^^^^ BUG IS THERE!!!!
-
 						// Draw nodes
 						// ^ Speak
-						if ( speak ) {
+						if ( node.speak ) {
 							var lineWidth : float = 180;
 							
-							container.rect.width = 50 + speak.lines.length * 190;
+							container.rect.width = 50 + node.speak.lines.length * 190;
 							container.rect.height = 80;
 
 							EditorGUI.LabelField ( new Rect ( 10, 20, 60, 20 ), "Speaker" );
-							speak.speaker = EditorGUI.Popup ( new Rect ( 70, 20, 120, 20 ), speak.speaker, GetSpeakerStrings ( tree ) );
+							node.speak.speaker = EditorGUI.Popup ( new Rect ( 70, 20, 120, 20 ), node.speak.speaker, GetSpeakerStrings ( tree ) );
 					
-							node.SetOutputAmount ( speak.lines.Length );
+							node.SetOutputAmount ( node.speak.lines.Length );
 							container.SetOutputAmount ( node.connectedTo.Length );
 
-							for ( var l : int = 0; l < speak.lines.Length; l++ ) {
+							for ( var l : int = 0; l < node.speak.lines.Length; l++ ) {
 								var lineRect : Rect = new Rect ( 10 + l * ( lineWidth + 10 ), 40, lineWidth, 20 );
-								speak.lines[l] = EditorGUI.TextField ( lineRect, speak.lines[l] );
+								node.speak.lines[l] = EditorGUI.TextField ( lineRect, node.speak.lines[l] );
 
 								if ( l > 0 ) {
 									GUI.backgroundColor = Color.red;
 									if ( GUI.Button ( new Rect ( lineRect.xMax - 28, 62, 28, 14 ), "x" ) ) {
-										var tmpLines : List.<String> = new List.<String>(speak.lines);
+										if ( nodeContainers.ContainsKey ( node.connectedTo[l] ) ) {
+											nodeContainers [ node.connectedTo[l] ].orphan = true;
+										}
+										
+										var tmpLines : List.<String> = new List.<String>(node.speak.lines);
 										tmpLines.RemoveAt ( l );
-										speak.lines = tmpLines.ToArray ();
+										node.speak.lines = tmpLines.ToArray ();
 									}
 									GUI.backgroundColor = Color.white;
 								}
@@ -368,10 +348,10 @@ public class OCTreeInspector extends Editor {
 							}
 									
 							GUI.backgroundColor = Color.green;
-							if ( GUI.Button ( new Rect ( 10 + speak.lines.Length * ( lineWidth + 10 ), 42, 28, 14 ), "+" ) ) {
-								tmpLines = new List.<String>(speak.lines);
+							if ( GUI.Button ( new Rect ( 10 + node.speak.lines.Length * ( lineWidth + 10 ), 42, 28, 14 ), "+" ) ) {
+								tmpLines = new List.<String>(node.speak.lines);
 								tmpLines.Add ( "" );
-								speak.lines = tmpLines.ToArray ();
+								node.speak.lines = tmpLines.ToArray ();
 							}
 							GUI.backgroundColor = Color.white;
 					

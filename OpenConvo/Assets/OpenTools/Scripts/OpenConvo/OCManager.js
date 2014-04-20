@@ -29,32 +29,32 @@ public class OCManager extends MonoBehaviour {
 		var wait : boolean = false;
 		var nextNode : int;
 
-		if ( jump ) {
-			tree.currentRoot = jump.rootNode;
+		if ( node.jump ) {
+			tree.currentRoot = node.jump.rootNode;
 			nextNode = tree.rootNodes[tree.currentRoot].firstNode;
 
 		} else if ( node.speak ) {
-			node.speaker = node.speakers [ node.speak.node.speaker ];
+			speaker = tree.speakers [ node.speak.speaker ];
 			wait = true;
 
-			tree.eventHandler.SendMessage ( "Setnode.speaker", node.speaker );
+			tree.eventHandler.SendMessage ( "SetSpeaker", speaker );
 
-		} else if ( event ) {
-			tree.eventHandler.SendMessage ( event.message, event.argument, SendMessageOptions.DontRequireReceiver );
+		} else if ( node.event ) {
+			tree.eventHandler.SendMessage ( node.event.message, node.event.argument, SendMessageOptions.DontRequireReceiver );
 
-			nextNode = event.connectedTo[0];
+			nextNode = node.connectedTo[0];
 
-		} else if ( setFlag ) {
-			flags.Set ( setFlag.flag, setFlag.b );
+		} else if ( node.setFlag ) {
+			flags.Set ( node.setFlag.flag, node.setFlag.b );
 		
-			nextNode = setFlag.connectedTo[0];
+			nextNode = node.connectedTo[0];
 
-		} else if ( getFlag ) {
-			if ( flags.Get ( getFlag.flag ) ) {
-				nextNode = getFlag.connectedTo[1];
+		} else if ( node.getFlag ) {
+			if ( flags.Get ( node.getFlag.flag ) ) {
+				nextNode = node.connectedTo[1];
 
 			} else {
-				nextNode = getFlag.connectedTo[0];
+				nextNode = node.connectedTo[0];
 
 			}
 
