@@ -230,10 +230,12 @@ public class OCTreeInspector extends Editor {
 
 			EditorGUILayout.Space ();
 
-			GUILayout.FlexibleSpace();
+			GUI.color = new Color ( 0, 0, 0, 0 );
+			GUILayout.Box ( "", GUILayout.Height ( 400 ) );
+			GUI.color = Color.white;
 
 			var scrollRect : Rect = GUILayoutUtility.GetLastRect ();
-			scrollRect.width = Screen.width;
+			scrollRect.width = Screen.width - 40;
 
 			if ( viewRect.xMax < scrollRect.xMax - 40 ) {
 				viewRect.xMax = scrollRect.xMax - 40;
