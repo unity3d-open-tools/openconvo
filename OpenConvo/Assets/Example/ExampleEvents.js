@@ -1,9 +1,15 @@
 ﻿#pragma strict
 
-function Start () {
+public class ExampleEvents extends MonoBehaviour {
+	public function OnConversationStart () {
+		
+	}
 
-}
+	public function OnConversationEnd () {
 
-function Update () {
+	}
 
+	public function OnSetSpeaker ( speaker : GameObject ) {
+		
+	}
 }
