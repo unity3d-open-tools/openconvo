@@ -13,7 +13,7 @@ public class OCFlag {
 }
 
 public class OCFlags {
-	private var flags : List.< OCFlag > = List.< OCFlag > ();
+	public var flags : List.< OCFlag > = List.< OCFlag > ();
 
 	public function Clear () {
 		flags.Clear ();

@@ -1,6 +1,6 @@
-﻿#pragma strict
+#pragma strict
 
-public class OGLabel extends OGWidget {
+public class OGConsoleFeed extends OGWidget {
 	public var text : String = "";
 	public var overrideFontSize : boolean = false;
 	public var fontSize : int;
@@ -13,6 +13,17 @@ public class OGLabel extends OGWidget {
 	private var spacing : float;
 	private var oldString : String = "";
 
+	//////////////////
+	// Add Lines
+	//////////////////	
+	function Add(newLine : String) {
+		text += "\n"+newLine;
+	}
+	function AddFirst(newLine : String) {
+		var newText : String = "";
+		newText = newLine+"\n"+text;
+		text = newText;
+	}
 
 	/////////////////
 	// Update
