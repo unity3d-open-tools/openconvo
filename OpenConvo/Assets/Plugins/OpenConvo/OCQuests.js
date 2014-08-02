@@ -155,6 +155,41 @@ public class OCQuests {
 	public var potentialQuests : Quest[] = new Quest[0];
 	public var activeQuest : int = -1;
 	
+	public function GetQuestNames () : String[] {
+		var strings : String[] = new String [ potentialQuests.Length ];
+		
+		for ( var i : int = 0; i < strings.Length; i++ ) {
+			strings[i] = potentialQuests[i].title;
+		}
+
+		return strings;
+	}
+	
+	public function GetObjectiveNames ( quest : String ) : String[] {
+		var strings : List.< String > = new List.< String > ();
+		
+		for ( var i : int = 0; i < potentialQuests.Length; i++ ) {
+			if ( quest == potentialQuests[i].title ) {
+				for ( var o : int = 0; o < potentialQuests[i].objectives.Length; o++ ) {
+					strings.Add ( potentialQuests[i].objectives[o].description );
+				}
+				break;
+			}
+		}
+
+		return strings.ToArray ();
+	}
+
+	public function GetIndex ( title : String ) : int {
+		for ( var i : int = 0; i < potentialQuests.Length; i++ ) {
+			if ( potentialQuests[i].title == title ) {
+				return i;
+			}
+		}
+		
+		return 0;
+	}
+	
 	public function SetActiveQuest ( quest : Quest ) {
 		for ( var i : int = 0; i < userQuests.Length; i++ ) {
 			if ( userQuests[i] == quest ) {
@@ -167,7 +202,7 @@ public class OCQuests {
 	}
 
 	public function GetActiveQuest () : Quest {
-		if ( activeQuest > 0 && activeQuest < userQuests.Length ) {
+		if ( activeQuest >= 0 && activeQuest < userQuests.Length ) {
 			return userQuests[activeQuest];
 		}
 
@@ -176,6 +211,8 @@ public class OCQuests {
 
 	public function AddUserQuest ( quest : Quest ) {
 		var tmp : List.< Quest > = new List.< Quest > ( userQuests );
+
+		activeQuest = tmp.Count;
 
 		tmp.Add ( quest );
 

@@ -39,6 +39,10 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
+	public function get inConversation () : boolean {
+		return tree != null;
+	}
+
 	public function SetSpeakerObjects ( speakerObjects : GameObject [] ) {
 		for ( var i : int = 0; i < speakers.Length; i++ ) {
 			speakers[i].gameObject = speakerObjects [i];
@@ -53,9 +57,11 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
-	public function Start () {
+	public function Awake () {
 		instance = this;
-	
+	}
+
+	public function Start () {
 		if ( !eventHandler ) {
 			var go : GameObject = GameObject.FindWithTag ( "EventHandler" );
 
@@ -255,6 +261,10 @@ public class OCManager extends MonoBehaviour {
 				}
 			}
 		}
+	}
+
+	public function SelectOption ( n : String ) {
+		SelectOption ( int.Parse ( n ) );
 	}
 
 	public function SelectOption ( i : int ) {
