@@ -7,7 +7,7 @@ It’s a conversation framework for Unity that features support for multiple act
 This is very handy if you're looking to make an RPG and don't want to code the backend for the conversation system from scratch. This plugin lets you worry about the UI and scene behaviour exclusively by sending all important events as a message to an event handler object that you define yourself.
 
 ### Demo
-[![demo](https://raw.githubusercontent.com/mrzapp/openconvo/master/Images/webdemo.jpg)](http://htmlpreview.github.io/?http://github.com/mrzapp/openconvo/blob/master/Build/Build.html)
+[![demo](https://raw.githubusercontent.com/mrzapp/openconvo/master/Images/webdemo.jpg)](https://rawgit.com/mrzapp/openconvo/master/Build/Build.html)
 
 ### Documentation and tutorials
 In the [wiki](https://github.com/mrzapp/openconvo/wiki)
