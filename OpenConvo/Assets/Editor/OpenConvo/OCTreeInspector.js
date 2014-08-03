@@ -7,7 +7,7 @@ public class OCTreeInspector extends Editor {
 	override function OnInspectorGUI () {
 		var tree : OCTree = target as OCTree;
 
-		if ( GUILayout.Button ( "Open editor" ) ) {
+		if ( GUILayout.Button ( "Open editor", GUILayout.Height ( 32 ) ) ) {
 			OCTreeEditor.target = tree;
 			EditorWindow.GetWindow ( OCTreeEditor );
 		}

@@ -7,6 +7,7 @@ public class UIScript extends OGPage {
 	public var btnNext : OGButton;
 
 	private var manager : OCManager;
+	private var currentNode : OCSpeak;
 
 	public function Start () {
 		Clear ();
@@ -30,6 +31,7 @@ public class UIScript extends OGPage {
 		lblLine.text = "";
 		lblLine.gameObject.SetActive ( false );
 		ClearChoices ();
+		currentNode = null;
 	}
 
 	public function ClearChoices () {
@@ -59,9 +61,11 @@ public class UIScript extends OGPage {
 			lblLine.text = node.lines[node.index].text;
 
 		}
+
+		currentNode = node;
 	}
 
 	public function Update () {
-		btnNext.gameObject.SetActive ( lblLine.gameObject.activeSelf && lblLine.text != "" );
+		btnNext.gameObject.SetActive ( currentNode != null && currentNode.lines.Length == 1 && !currentNode.smalltalk );
 	}
 }

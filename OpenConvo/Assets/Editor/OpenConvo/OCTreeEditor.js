@@ -30,6 +30,7 @@ public class OCTreeEditor extends EditorWindow {
 	private var connectingNode : int = 0;
 	private var connectingOutput : int = 0;
 	private var placedInputs : Dictionary.< int, Rect > = new Dictionary.< int, Rect > ();
+	private var innerScrollRect : Rect;
 
 	private function get node () : OCNode {
 		return target.rootNodes [ currentRoot ].GetNode ( currentNode );
@@ -102,7 +103,7 @@ public class OCTreeEditor extends EditorWindow {
 					
 					var line : OCSpeak.Line = node.speak.lines [ i ];
 					
-					line.text = GUILayout.TextArea ( line.text, GUILayout.Height ( 80 ) );
+					line.text = EditorGUILayout.TextArea ( line.text, GUILayout.Height ( 80 ), GUILayout.Width ( 250 ) );
 					line.audio = EditorGUILayout.ObjectField ( "Audio", line.audio, typeof ( AudioClip ), false ) as AudioClip;
 					GUI.backgroundColor = speakerColors [ line.facing ];
 					line.facing = EditorGUILayout.Popup ( "Facing", line.facing, target.speakers );
@@ -218,6 +219,19 @@ public class OCTreeEditor extends EditorWindow {
 	private function DrawNode ( n : OCNode, x : float, y : float ) {
 		var nodeText : String = "";
 		var nodeColor : Color = Color.white;
+
+		if ( x - 70 < 0 ) {
+			innerScrollRect.xMin = x - 70;
+		
+		} else if ( x + 70 > innerScrollRect.xMax ) {
+			innerScrollRect.xMax = x + 70;
+
+		}
+		
+		if ( y + 60 > innerScrollRect.yMax ) {
+			innerScrollRect.yMax = y + 60;
+
+		}
 
 		switch ( n.type ) {
 			case OCNodeType.Speak:
@@ -494,7 +508,7 @@ public class OCTreeEditor extends EditorWindow {
 		GUI.Box ( scrollRect, "" );
 
 		// Tree editor
-		scrollPosition = EditorGUILayout.BeginScrollView ( scrollPosition, GUILayout.Width ( scrollRect.width ), GUILayout.Height ( scrollRect.height ) );
+		scrollPosition = GUI.BeginScrollView ( scrollRect, scrollPosition, innerScrollRect );
 
 		var center : Vector2 = scrollRect.center;
 		var right : float = center.x - ( ( target.rootNodes.Length * 1.0 ) / 2 ) * 32;
@@ -539,6 +553,10 @@ public class OCTreeEditor extends EditorWindow {
 			
 			if ( GUI.Button ( new Rect ( right + i * 32 - 16, 32, 32, 16 ), i.ToString() ) ) {
 				currentRoot = i;
+				innerScrollRect.width = scrollRect.width;
+				innerScrollRect.height = scrollRect.height;
+				innerScrollRect.x = 0;
+				innerScrollRect.y = 0;
 			}
 
 			GUI.color = Color.white;
@@ -554,7 +572,16 @@ public class OCTreeEditor extends EditorWindow {
 		// ^ Node display
 		GUI.color = Color.green;
 		if ( GUI.Button ( new Rect ( right + currentRoot * 32 - 12, 56, 24, 12 ), "+" ) ) {
-			target.AddRootNode ();
+			var newNode : OCNode = target.rootNodes [ currentRoot ].AddNode ();
+			var firstNode : OCNode = target.rootNodes [ currentRoot ].GetFirstNode(); 
+
+			if ( firstNode.connectedTo [ i ] > 0 ) { 
+				newNode.connectedTo [ 0 ] = firstNode.connectedTo [ i ];
+			}
+			
+			firstNode.connectedTo [ i ] = newNode.id;
+
+			node = newNode;
 		}
 		
 		GUI.color = Color.white;
@@ -565,7 +592,7 @@ public class OCTreeEditor extends EditorWindow {
 		DrawLine ( new Vector2 ( right + currentRoot * 32, 48 ), new Vector2 ( center.x, 96 ) );
 		DrawNode ( target.rootNodes[currentRoot].GetNode ( target.rootNodes[currentRoot].firstNode ), center.x, 96 );
 
-		GUILayout.EndScrollView ();
+		GUI.EndScrollView ();
 
 		if ( Event.current.type == EventType.MouseDown ) {
 			var cNode : OCNode = target.rootNodes [ currentRoot ].GetNode ( connectingNode );
@@ -580,6 +607,18 @@ public class OCTreeEditor extends EditorWindow {
 
 		if ( connectingNode > 0 ) {
 			Repaint ();
+		}
+		
+		if ( innerScrollRect.width < scrollRect.width ) {
+			innerScrollRect.width = scrollRect.width;
+		}
+
+		if ( innerScrollRect.height < scrollRect.height ) {
+			innerScrollRect.height = scrollRect.height;
+		}
+
+		if ( GUI.changed ) {
+			target.CleanUp ();
 		}
 	}
 }

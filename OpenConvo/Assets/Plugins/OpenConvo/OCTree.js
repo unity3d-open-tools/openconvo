@@ -32,6 +32,20 @@ public class OCTree extends MonoBehaviour {
 		return strings;
 	}
 
+	public function CleanUp () {
+		for ( var i : int = 0; i < rootNodes.Length; i++ ) {
+			var tmp : List.< OCNode > = new List.< OCNode > ( rootNodes[i].nodes );
+
+			for ( var n : int = tmp.Count - 1; n >= 0; n-- ) {
+				if ( tmp[n].id < 1 ) {
+					tmp.RemoveAt ( n );
+				}
+			}
+
+			rootNodes[i].nodes = tmp.ToArray ();
+		}
+	}	
+
 	public function MoveRoot ( from : int, to : int ) {
 		if ( to >= 0 && to < rootNodes.Length ) {
 			var fromRootNode : OCRootNode = rootNodes[from];
