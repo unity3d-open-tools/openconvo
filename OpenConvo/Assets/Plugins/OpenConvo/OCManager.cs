@@ -1,86 +1,92 @@
-#pragma strict
+using UnityEngine;
+using System.Collections;
 
+[System.Serializable]
 public class OCSpeaker {
-	public var name : String = "";
-	public var gameObject : GameObject;
+	public string name = "";
+	public GameObject gameObject;
 
-	function OCSpeaker ( name : String, gameObject : GameObject ) {
+	public OCSpeaker ( string name, GameObject gameObject ) {
 		this.name = name;
 		this.gameObject = gameObject;
 	}
 }
 	
-public class OCManager extends MonoBehaviour {
-	public var flags : OCFlags = new OCFlags ();
-	public var quests : OCQuests = new OCQuests ();
-	public var tree : OCTree;
-	public var currentNode : int;
-	public var eventHandler : OCEventHandler;
-	public var speakers : OCSpeaker [] = new OCSpeaker [0];
+public class OCManager : MonoBehaviour {
+	public OCFlags flags = new OCFlags ();
+	public OCQuests quests = new OCQuests ();
+	public OCTree tree;
+	public int currentNode;
+	public OCEventHandler eventHandler;
+	public OCSpeaker[] speakers = new OCSpeaker[0];
 
-	private var currentAudioSource : AudioSource;
-	private var speaker : OCSpeaker;
+	private AudioSource currentAudioSource;
+	private OCSpeaker speaker;
 
-	public static var instance : OCManager;
+	public static OCManager instance;
 
-	public static function GetInstance () : OCManager {
+	public static OCManager GetInstance () {
 		return instance;
 	}
 
-	public function get optionCount () : int {
-		var node : OCNode = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
+	public int optionCount {
+		get {
+			OCNode node = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
 		
-		if ( node && node.speak && node.type == OCNodeType.Speak ) {
-			return node.speak.lines.Length;
-		
-		} else {
-			return 0;
-		
-		}
-	}
-
-	public function get inConversation () : boolean {
-		return tree != null;
-	}
-
-	public function SetSpeakerObjects ( speakerObjects : GameObject [] ) {
-		for ( var i : int = 0; i < speakers.Length; i++ ) {
-			speakers[i].gameObject = speakerObjects [i];
-		}
-	}
-	
-	public function SetSpeakers ( speakerNames : String [], speakerObjects : GameObject [] ) {
-		speakers = new OCSpeaker [ speakerNames.Length ];
-		
-		for ( var i : int = 0; i < speakers.Length; i++ ) {
-			speakers[i] = new OCSpeaker ( speakerNames[i], speakerObjects[i] );
-		}
-	}
-
-	public function Awake () {
-		instance = this;
-	}
-
-	public function Start () {
-		if ( !eventHandler ) {
-			var go : GameObject = GameObject.FindWithTag ( "EventHandler" );
-
-			if ( go ) {
-				eventHandler = go.GetComponentInChildren.< OCEventHandler > ();
+			if ( node != null && node.speak != null && node.type == OCNodeType.Speak ) {
+				return node.speak.lines.Length;
+			
+			} else {
+				return 0;
+			
 			}
 		}
 	}
 
-	public function EndConversation () {
+	public bool inConversation {
+		get {
+			return tree != null;
+		}
+	}
+
+	public void SetSpeakerObjects ( GameObject[] speakerObjects ) {
+		for ( int i = 0; i < speakers.Length; i++ ) {
+			speakers[i].gameObject = speakerObjects [i];
+		}
+	}
+	
+	public void SetSpeakers ( string[] speakerNames, GameObject[] speakerObjects ) {
+		speakers = new OCSpeaker [ speakerNames.Length ];
+		
+		for ( int i = 0; i < speakers.Length; i++ ) {
+			speakers[i] = new OCSpeaker ( speakerNames[i], speakerObjects[i] );
+		}
+	}
+
+	public void Awake () {
+		instance = this;
+	}
+
+	public void Start () {
+		if ( !eventHandler ) {
+			GameObject go = GameObject.FindWithTag ( "EventHandler" );
+
+			if ( go ) {
+				eventHandler = go.GetComponentInChildren< OCEventHandler > ();
+			}
+		}
+	}
+
+	public void EndConversation () {
 		EndConversation ( true );
 	}
 
-	public function EndConversation ( stopAudio : boolean ) {
+	public void EndConversation ( bool stopAudio ) {
 		if ( stopAudio && currentAudioSource ) {
 			currentAudioSource.Stop ();
 		}
 	
-		for ( var s : OCSpeaker in speakers ) {
+		foreach ( OCSpeaker s in speakers ) {
 			if ( s.gameObject ) {
 				s.gameObject.SendMessage ( "OnConversationEnd", SendMessageOptions.DontRequireReceiver );
 			}
@@ -94,7 +100,7 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
-	private function PlayLineAudio ( node : OCNode ) : IEnumerator {
+	private IEnumerator PlayLineAudio ( OCNode node ) {
 		// Make sure no other conversation audio is playing
 		if ( currentAudioSource ) {
 			currentAudioSource.Stop ();
@@ -109,12 +115,12 @@ public class OCManager extends MonoBehaviour {
 			currentAudioSource = speaker.gameObject.audio;
 	
 			// Wait for speech duration
-			var duration : float = speaker.gameObject.audio.clip.length;
-			yield WaitForSeconds ( duration );
+			float duration = speaker.gameObject.audio.clip.length;
+			yield return new WaitForSeconds ( duration );
 			
 			// If we already continued manually, or the conversation has ended, abort
 			if ( node.id == currentNode && tree != null ) {
-				yield WaitForSeconds ( 0.5 );
+				yield return new WaitForSeconds ( 0.5f );
 				NextNode ( node.speak.index );
 			}
 
@@ -122,13 +128,13 @@ public class OCManager extends MonoBehaviour {
 		} else {
 			// For smalltalk, estimate the duration of the sentence
 			if ( node.speak.smalltalk ) {
-				var words : float = node.speak.lines[node.speak.index].text.Split ( " "[0] ).Length;
-				var wordsPerMinute : float = 130;
-				yield WaitForSeconds ( ( words / wordsPerMinute ) * 60 );
+				float words = node.speak.lines[node.speak.index].text.Split ( " "[0] ).Length;
+				float wordsPerMinute = 130;
+				yield return new WaitForSeconds ( ( words / wordsPerMinute ) * 60f );
 				NextNode ();
 
 			} else {
-				yield null;
+				yield return null;
 			
 			}
 
@@ -136,11 +142,11 @@ public class OCManager extends MonoBehaviour {
 		
 	}
 
-	public function DisplayNode () : void {
-		var node : OCNode = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
-		var wait : boolean = false;
-		var exit : boolean = false;
-		var nextNode : int;
+	public void DisplayNode () {
+		OCNode node = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
+		bool wait = false;
+		bool exit = false;
+		int nextNode = 0;
 
 		switch ( node.type ) {
 			case OCNodeType.Jump:
@@ -155,25 +161,25 @@ public class OCManager extends MonoBehaviour {
 
 			case OCNodeType.Event:
 				// Send the event message to the target object
-				if ( node.event.object != null && node.event.eventToTarget ) {
-					if ( !String.IsNullOrEmpty ( node.event.argument ) ) {
-						node.event.object.SendMessage ( node.event.message, node.event.argument, SendMessageOptions.DontRequireReceiver );
+				if ( node.evt.obj != null && node.evt.eventToTarget ) {
+					if ( !string.IsNullOrEmpty ( node.evt.argument ) ) {
+						node.evt.obj.SendMessage ( node.evt.message, node.evt.argument, SendMessageOptions.DontRequireReceiver );
 
 					} else {
-						node.event.object.SendMessage ( node.event.message, tree, SendMessageOptions.DontRequireReceiver );
+						node.evt.obj.SendMessage ( node.evt.message, tree, SendMessageOptions.DontRequireReceiver );
 					
 					}
 
 				// Send the message to the event handler
 				} else if ( eventHandler ) {
-					if ( !String.IsNullOrEmpty ( node.event.argument ) ) {
-						eventHandler.Event ( node.event.message, node.event.argument );
+					if ( !string.IsNullOrEmpty ( node.evt.argument ) ) {
+						eventHandler.Event ( node.evt.message, node.evt.argument );
 
-					} else if ( node.event.object != null ) {
-						eventHandler.Event ( node.event.message, node.event.object );
+					} else if ( node.evt.obj != null ) {
+						eventHandler.Event ( node.evt.message, node.evt.obj );
 
 					} else {
-						eventHandler.Event ( node.event.message, tree );
+						eventHandler.Event ( node.evt.message, tree );
 					
 					}
 
@@ -199,18 +205,18 @@ public class OCManager extends MonoBehaviour {
 				break;
 			
 			case OCNodeType.SetQuest:
-				var quest : OCQuests.Quest = quests.GetUserQuest ( node.setQuest.quest );
+				OCQuests.Quest quest = quests.GetUserQuest ( node.setQuest.quest );
 			       	
-				if ( !quest ) {
+				if ( quest == null ) {
 					quest = quests.GetPotentialQuest ( node.setQuest.quest );
 
-					if ( quest ) {
+					if ( quest != null ) {
 						quests.AddUserQuest ( quest );
 					}
 				}
 
-				if ( quest ) {
-					var objective : OCQuests.Objective = quest.objectives [ node.setQuest.objective ];
+				if ( quest != null ) {
+					OCQuests.Objective objective = quest.objectives [ node.setQuest.objective ];
 					objective.completed = node.setQuest.completed;
 				
 				} else {
@@ -224,7 +230,7 @@ public class OCManager extends MonoBehaviour {
 			case OCNodeType.GetQuest:
 				quest = quests.GetUserQuest ( node.getQuest.quest );
 				
-				if ( ( !node.getQuest.completed && quest ) || ( quest && node.getQuest.objective < quest.objectives.Length && quest.objectives[node.getQuest.objective].completed ) ) {
+				if ( ( !node.getQuest.completed && quest != null ) || ( quest != null && node.getQuest.objective < quest.objectives.Length && quest.objectives[node.getQuest.objective].completed ) ) {
 					nextNode = node.connectedTo[1];
 
 				} else {
@@ -248,7 +254,7 @@ public class OCManager extends MonoBehaviour {
 			DisplayNode ();
 		
 		// OCSpeak nodes
-		} else if ( node && node.speak ) {
+		} else if ( node != null && node.speak != null ) {
 			eventHandler.OnSetSpeaker ( speaker, node.speak );
 			
 			if ( !node.speak.choice ) {
@@ -263,24 +269,24 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
-	public function SelectOption ( n : String ) {
+	public void SelectOption ( string n ) {
 		SelectOption ( int.Parse ( n ) );
 	}
 
-	public function SelectOption ( i : int ) {
+	public void SelectOption ( int i ) {
 		eventHandler.OnSelectOption ( i );
 		
-		var node : OCNode = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
+		OCNode node = tree.rootNodes[tree.currentRoot].GetNode ( currentNode );
 		node.speak.index = i;
 
 		StartCoroutine ( PlayLineAudio ( node ) );
 	}
 
-	public function NextNode () {
-		var rootNode : OCRootNode = tree.rootNodes[tree.currentRoot];
-		var node : OCNode = rootNode.GetNode ( currentNode );
+	public void NextNode () {
+		OCRootNode rootNode = tree.rootNodes[tree.currentRoot];
+		OCNode node = rootNode.GetNode ( currentNode );
 		
-		if ( node.speak && node.speak.choice ) {
+		if ( node.speak != null && node.speak.choice ) {
 			NextNode ( node.speak.index );
 		
 		} else {
@@ -289,14 +295,14 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
-	public function NextNode ( i : int ) {
+	public void NextNode ( int i ) {
 		if ( tree == null ) { return; }
 
-		var rootNode : OCRootNode = tree.rootNodes[tree.currentRoot];
-		var node : OCNode = rootNode.GetNode ( currentNode );
+		OCRootNode rootNode = tree.rootNodes[tree.currentRoot];
+		OCNode node = rootNode.GetNode ( currentNode );
 
 		// Force output 0 on smalltalk nodes, just in case
-		if ( node.speak && node.speak.smalltalk ) {
+		if ( node.speak != null && node.speak.smalltalk ) {
 			i = 0;
 		}
 
@@ -312,7 +318,7 @@ public class OCManager extends MonoBehaviour {
 		}
 	}
 
-	public function StartConversation ( tree : OCTree ) {
+	public void StartConversation ( OCTree tree ) {
 		if ( !this.tree && tree && tree.rootNodes.Length > 0 ) {
 			this.tree = tree;
 

@@ -1,47 +1,53 @@
-﻿#pragma strict
+using UnityEngine;
+using UnityEditor;
+using System.Collections;
+using System.Collections.Generic;
 
-public class OCTreeEditor extends EditorWindow {
-	public class Range extends System.ValueType {
-		public var from : float;
-		public var to : float;
+public class OCTreeEditor : EditorWindow {
+	[System.Serializable]
+	public struct Range {
+		public float from;
+		public float to;
 	}
 	
-	public static var target : OCTree;
-	public static var currentRoot : int;
-	public static var currentNode : int;
+	public static OCTree target;
+	public static int currentRoot;
+	public static int currentNode;
 
-	private var speakerColors : Color [] = [
-		new Color ( 0.6, 0.8, 1.0, 1.0 ),
-		new Color ( 0.6, 1.0, 0.8, 1.0 ),
-		new Color ( 0.2, 0.5, 0.4, 1.0 ),
-		new Color ( 0.1, 0.2, 0.8, 1.0 ),
-		new Color ( 0.8, 1.0, 0.2, 1.0 ),
-		new Color ( 0.4, 0.5, 0.8, 1.0 ),
-		new Color ( 0.3, 0.2, 0.6, 1.0 ),
-		new Color ( 0.8, 0.3, 0.2, 1.0 ),
-		new Color ( 0.1, 0.4, 0.4, 1.0 ),
-		new Color ( 0.9, 0.1, 0.8, 1.0 )
-	];
-	private var distance : Vector2 = new Vector2 ( 400, 100 );
-	private var scrollPosition : Vector2;
-	private var scrollRect : Rect;
-	private var inspectorScrollPosition : Vector2;
-	private var manager : OCManager;
-	private var connectingNode : int = 0;
-	private var connectingOutput : int = 0;
-	private var placedInputs : Dictionary.< int, Rect > = new Dictionary.< int, Rect > ();
-	private var innerScrollRect : Rect;
+	private Color[] speakerColors = {
+		new Color ( 0.6f, 0.8f, 1.0f, 1.0f ),
+		new Color ( 0.6f, 1.0f, 0.8f, 1.0f ),
+		new Color ( 0.2f, 0.5f, 0.4f, 1.0f ),
+		new Color ( 0.1f, 0.2f, 0.8f, 1.0f ),
+		new Color ( 0.8f, 1.0f, 0.2f, 1.0f ),
+		new Color ( 0.4f, 0.5f, 0.8f, 1.0f ),
+		new Color ( 0.3f, 0.2f, 0.6f, 1.0f ),
+		new Color ( 0.8f, 0.3f, 0.2f, 1.0f ),
+		new Color ( 0.1f, 0.4f, 0.4f, 1.0f ),
+		new Color ( 0.9f, 0.1f, 0.8f, 1.0f )
+	};
+	private Vector2 distance = new Vector2 ( 400f, 100f );
+	private Vector2 scrollPosition;
+	private Rect scrollRect;
+	private Vector2 inspectorScrollPosition;
+	private OCManager manager;
+	private int connectingNode = 0;
+	private int connectingOutput = 0;
+	private Dictionary< int, Rect > placedInputs = new Dictionary< int, Rect > ();
+	private Rect innerScrollRect;
 
-	private function get node () : OCNode {
-		return target.rootNodes [ currentRoot ].GetNode ( currentNode );
+	private OCNode node {
+		get {
+			return target.rootNodes [ currentRoot ].GetNode ( currentNode );
+		}
+
+		set {
+			currentNode = ((OCNode)value).id;
+		}
 	}
 	
-	private function set node ( value : OCNode ) {
-		currentNode = value.id;
-	}
-
-	private function DrawLine ( start : Vector2, end : Vector2 ) {
-		var points : List.< Vector3 > = new List.< Vector3 > ();
+	private void DrawLine ( Vector2 start, Vector2 end ) {
+		List< Vector3 > points = new List< Vector3 > ();
 
 		points.Add ( new Vector3 ( start.x, start.y, 0 ) );
 		
@@ -61,13 +67,15 @@ public class OCTreeEditor extends EditorWindow {
 
 		points.Add ( new Vector3 ( end.x, end.y, 0 ) );
 		
-		Handles.color = new Color ( 1.0, 1.0, 1.0, 0.33 );
+		Handles.color = new Color ( 1.0f, 1.0f, 1.0f, 0.33f );
 		Handles.DrawAAPolyLine ( points.ToArray () );
 	}
 
-	private function DrawInspector () {
-		var i : int = 0;
-		var type : OCNodeType = EditorGUILayout.Popup ( "Type", node.type, System.Enum.GetNames ( OCNodeType ) );
+	private void DrawInspector () {
+		int i = 0;
+		string[] questNames = new string[0];
+		string[] objectiveNames = new string[0];
+		OCNodeType type = (OCNodeType)EditorGUILayout.Popup ( "Type", (int)node.type, System.Enum.GetNames ( typeof(OCNodeType) ) );
 		
 		if ( type != node.type ) {
 			node.SetType ( type );
@@ -101,10 +109,10 @@ public class OCTreeEditor extends EditorWindow {
 				
 					GUILayout.Space ( 10 );
 					
-					var line : OCSpeak.Line = node.speak.lines [ i ];
+					OCSpeak.Line line = node.speak.lines [ i ];
 					
 					line.text = EditorGUILayout.TextArea ( line.text, GUILayout.Height ( 80 ), GUILayout.Width ( 250 ) );
-					line.audio = EditorGUILayout.ObjectField ( "Audio", line.audio, typeof ( AudioClip ), false ) as AudioClip;
+					line.audio = (AudioClip) EditorGUILayout.ObjectField ( "Audio", line.audio, typeof ( AudioClip ), false );
 					GUI.backgroundColor = speakerColors [ line.facing ];
 					line.facing = EditorGUILayout.Popup ( "Facing", line.facing, target.speakers );
 					GUI.backgroundColor = Color.white;
@@ -127,10 +135,10 @@ public class OCTreeEditor extends EditorWindow {
 				break;
 
 			case OCNodeType.Event:
-				node.event.message = EditorGUILayout.TextField ( "Message", node.event.message );
-				node.event.argument = EditorGUILayout.TextField ( "Argument", node.event.argument );
-				node.event.object = EditorGUILayout.ObjectField ( "Target object", node.event.object, typeof ( GameObject ), true ) as GameObject;
-				node.event.eventToTarget = EditorGUILayout.Toggle ( "Event to target", node.event.eventToTarget );
+				node.evt.message = EditorGUILayout.TextField ( "Message", node.evt.message );
+				node.evt.argument = EditorGUILayout.TextField ( "Argument", node.evt.argument );
+				node.evt.obj = (GameObject) EditorGUILayout.ObjectField ( "Target object", node.evt.obj, typeof ( GameObject ), true );
+				node.evt.eventToTarget = EditorGUILayout.Toggle ( "Event to target", node.evt.eventToTarget );
 				
 				break;
 			
@@ -157,14 +165,14 @@ public class OCTreeEditor extends EditorWindow {
 
 			case OCNodeType.SetQuest:
 				if ( !manager ) {
-					manager = EditorGUILayout.ObjectField ( "Select OCManager object", manager, typeof ( OCManager ), true ) as OCManager;
+					manager = (OCManager) EditorGUILayout.ObjectField ( "Select OCManager object", manager, typeof ( OCManager ), true );
 				
 				} else {
-					var questNames : String [] = manager.quests.GetQuestNames ();
+					questNames = manager.quests.GetQuestNames ();
 					
 					if ( questNames.Length > 0 ) {
 						node.setQuest.quest = questNames [ EditorGUILayout.Popup ( "Quest", manager.quests.GetIndex ( node.setQuest.quest ), questNames ) ];
-						var objectiveNames : String[] = manager.quests.GetObjectiveNames ( node.setQuest.quest );
+						objectiveNames = manager.quests.GetObjectiveNames ( node.setQuest.quest );
 
 						if ( objectiveNames.Length > 0 ) {
 							node.setQuest.objective = EditorGUILayout.Popup ( "Objective", node.setQuest.objective, objectiveNames );
@@ -186,7 +194,7 @@ public class OCTreeEditor extends EditorWindow {
 
 			case OCNodeType.GetQuest:
 				if ( !manager ) {
-					manager = EditorGUILayout.ObjectField ( "Select OCManager object", manager, typeof ( OCManager ), true ) as OCManager;
+					manager = (OCManager) EditorGUILayout.ObjectField ( "Select OCManager object", manager, typeof ( OCManager ), true );
 				
 				} else {
 					questNames = manager.quests.GetQuestNames ();
@@ -216,9 +224,9 @@ public class OCTreeEditor extends EditorWindow {
 		}
 	}
 
-	private function DrawNode ( n : OCNode, x : float, y : float ) {
-		var nodeText : String = "";
-		var nodeColor : Color = Color.white;
+	private void DrawNode ( OCNode n, float x, float y ) {
+		string nodeText = "";
+		Color nodeColor = Color.white;
 
 		if ( x - 70 < 0 ) {
 			innerScrollRect.xMin = x - 70;
@@ -299,9 +307,9 @@ public class OCTreeEditor extends EditorWindow {
 		GUI.backgroundColor = nodeColor;
 		if ( GUI.Button ( new Rect ( x - 50, y, 100, 40 ), nodeText ) ) {
 			if ( connectingNode > 0 ) {
-				var fromNode : OCNode = target.rootNodes [ currentRoot ].GetNode ( connectingNode );
+				OCNode fromNode = target.rootNodes [ currentRoot ].GetNode ( connectingNode );
 
-				if ( fromNode ) {
+				if ( fromNode != null ) {
 					fromNode.connectedTo[connectingOutput] = n.id;
 					connectingNode = 0;
 					connectingOutput = 0;
@@ -321,28 +329,28 @@ public class OCTreeEditor extends EditorWindow {
 		GUI.color = Color.white;
 
 		// Input
-		var inputRect : Rect = new Rect ( x - 6, y - 6, 12, 12 );
+		Rect inputRect = new Rect ( x - 6, y - 6, 12, 12 );
 		
 		placedInputs.Add ( n.id, inputRect );
 
 		if ( GUI.Button ( inputRect, "" ) ) {
 		}
 
-		for ( var i : int = 0; i < n.connectedTo.Length; i++ ) {
-			var nextId : int = n.connectedTo[i];
-			var xPos : float = x;
-			var nodeXPos : float = xPos;
+		for ( int i = 0; i < n.connectedTo.Length; i++ ) {
+			int nextId = n.connectedTo[i];
+			float xPos = x;
+			float nodeXPos = xPos;
 			
 			if ( n.connectedTo.Length > 1 ) {
-				var span : float = distance.x;
-				var segment : float = span / ( n.connectedTo.Length - 1 );
+				float span = distance.x;
+				float segment = span / ( n.connectedTo.Length - 1 );
 				xPos = x - span / 2 + i * segment;
 				nodeXPos = x - 100 / 2 + i * ( 100 / ( n.connectedTo.Length - 1 ) );
 			}
 			
 			GUI.color = Color.green;
 			if ( GUI.Button ( new Rect ( nodeXPos - 12, y + 50, 24, 12 ), "+" ) ) {
-				var newNode : OCNode = target.rootNodes [ currentRoot ].AddNode ();
+				OCNode newNode = target.rootNodes [ currentRoot ].AddNode ();
 				
 				if ( n.connectedTo [ i ] > 0 ) { 
 					newNode.connectedTo [ 0 ] = n.connectedTo [ i ];
@@ -354,10 +362,10 @@ public class OCTreeEditor extends EditorWindow {
 			}
 			GUI.color = Color.white;
 			
-			var outputRect : Rect;
+			Rect outputRect;
 
 			if ( n.type == OCNodeType.GetFlag || n.type == OCNodeType.GetQuest ) {
-				var bString : String = i == 0 ? "false" : "true";
+				string bString = i == 0 ? "false" : "true";
 				outputRect = new Rect ( nodeXPos - 24, y + 32, 48, 14 );
 
 				if ( GUI.Button ( outputRect, bString ) ) {
@@ -375,9 +383,9 @@ public class OCTreeEditor extends EditorWindow {
 			}
 				
 			if ( nextId > 0 ) {
-				var nextNode : OCNode = target.rootNodes[currentRoot].GetNode ( nextId );
+				OCNode nextNode = target.rootNodes[currentRoot].GetNode ( nextId );
 
-				if ( !nextNode ) {
+				if ( nextNode == null ) {
 					n.connectedTo[i] = 0;
 					return;
 				}
@@ -397,13 +405,18 @@ public class OCTreeEditor extends EditorWindow {
 		}
 	}
 
-	public function OnGUI () {	
+	public void OnGUI () {	
 		placedInputs.Clear ();
 		
 		title = "Tree Editor";
 		
 		distance.x = 220;
 		distance.y = 100;
+		
+		List< string > tmpStr = new List< string > ();
+		List< OCRootNode > tmpRoot = new List< OCRootNode > ();  
+		OCRootNode thisRoot = null; 
+		OCRootNode thatRoot = null; 
 		
 		if ( !target ) {
 			EditorGUI.LabelField ( new Rect ( position.width / 2 - 42, position.height / 2 - 10, 84, 20 ), "No target tree!", EditorStyles.boldLabel );
@@ -420,19 +433,19 @@ public class OCTreeEditor extends EditorWindow {
 		}
 
 		// Inspector
-		var inspectorRect : Rect = new Rect ( position.width - 300, 0, 300, position.height );
-		var innerInspectorRect : Rect = new Rect ( inspectorRect.x + 10, inspectorRect.y + 10, inspectorRect.width - 20, inspectorRect.height - 20 );
+		Rect inspectorRect = new Rect ( position.width - 300, 0, 300, position.height );
+		Rect innerInspectorRect = new Rect ( inspectorRect.x + 10, inspectorRect.y + 10, inspectorRect.width - 20, inspectorRect.height - 20 );
 		
 		GUILayout.BeginArea ( innerInspectorRect );
 		
-		var i : int;
+		int i;
 
 		GUILayout.Label ( "Tree (" + target.gameObject.name + ")", EditorStyles.largeLabel );
 		GUILayout.Box ( "", GUILayout.Height ( 1 ), GUILayout.Width ( 270 ) );
 
 		// ^ Speaker names
 		if ( target.speakers.Length < 1 ) {
-			var tmpStr : List.< String > = new List.< String > ( target.speakers );
+			tmpStr = new List< string > ( target.speakers );
 			tmpStr.Add ( "Speaker" );
 			target.speakers = tmpStr.ToArray ();
 		}
@@ -447,7 +460,7 @@ public class OCTreeEditor extends EditorWindow {
 
 			GUI.color = Color.red;
 			if ( target.speakers.Length > 1 && GUILayout.Button ( "x", GUILayout.Height ( 16 ), GUILayout.Width ( 32 ) ) ) {
-				tmpStr = new List.< String > ( target.speakers );
+				tmpStr = new List< string > ( target.speakers );
 				tmpStr.RemoveAt ( i );
 				target.speakers = tmpStr.ToArray ();
 				return;
@@ -459,7 +472,7 @@ public class OCTreeEditor extends EditorWindow {
 		
 		GUI.color = Color.green;
 		if ( target.speakers.Length < 10 && GUILayout.Button ( "+", GUILayout.Height ( 16 ), GUILayout.Width ( 32 ) ) ) {
-			tmpStr = new List.< String > ( target.speakers );
+			tmpStr = new List< string > ( target.speakers );
 			tmpStr.Add ( "Speaker" );
 			target.speakers = tmpStr.ToArray ();
 		}
@@ -471,8 +484,8 @@ public class OCTreeEditor extends EditorWindow {
 		GUILayout.Box ( "", GUILayout.Height ( 1 ), GUILayout.Width ( 270 ) );
 
 		// ^ Tags
-		var tags : String[] = target.rootNodes[currentRoot].tags;
-		var tagString : String = "";
+		string[] tags = target.rootNodes[currentRoot].tags;
+		string tagString = "";
 
 		for ( i = 0; i < tags.Length; i++ ) {
 			tagString += tags[i];
@@ -495,7 +508,7 @@ public class OCTreeEditor extends EditorWindow {
 
 		inspectorScrollPosition = GUILayout.BeginScrollView ( inspectorScrollPosition );
 
-		if ( node ) {
+		if ( node != null ) {
 			DrawInspector ();
 		}
 
@@ -510,14 +523,14 @@ public class OCTreeEditor extends EditorWindow {
 		// Tree editor
 		scrollPosition = GUI.BeginScrollView ( scrollRect, scrollPosition, innerScrollRect );
 
-		var center : Vector2 = scrollRect.center;
-		var right : float = center.x - ( ( target.rootNodes.Length * 1.0 ) / 2 ) * 32;
+		Vector2 center = scrollRect.center;
+		float right = center.x - ( ( target.rootNodes.Length * 1.0f ) / 2f ) * 32f;
 
 		// ^ Root navigation
 		if ( currentRoot > 0 && GUI.Button ( new Rect ( right + ( currentRoot - 1 ) * 32 - 16, 8, 32, 16 ), "<" ) ) {
-			var tmpRoot : List.< OCRootNode > = new List.< OCRootNode > ( target.rootNodes );
-			var thisRoot : OCRootNode = tmpRoot [ currentRoot ];
-			var thatRoot : OCRootNode = tmpRoot [ currentRoot - 1 ];
+			tmpRoot = new List< OCRootNode > ( target.rootNodes );
+			thisRoot = tmpRoot [ currentRoot ];
+			thatRoot = tmpRoot [ currentRoot - 1 ];
 			tmpRoot [ currentRoot ] = thatRoot;
 			tmpRoot [ currentRoot - 1 ] = thisRoot;
 			target.rootNodes = tmpRoot.ToArray ();
@@ -532,7 +545,7 @@ public class OCTreeEditor extends EditorWindow {
 		GUI.color = Color.white;
 
 		if ( currentRoot < target.rootNodes.Length - 1 && GUI.Button ( new Rect ( right + ( currentRoot + 1 ) * 32 - 16, 8, 32, 16 ), ">" ) ) {
-			tmpRoot = new List.< OCRootNode > ( target.rootNodes );
+			tmpRoot = new List< OCRootNode > ( target.rootNodes );
 			thisRoot = tmpRoot [ currentRoot ];
 			thatRoot = tmpRoot [ currentRoot + 1 ];
 			tmpRoot [ currentRoot ] = thatRoot;
@@ -572,8 +585,8 @@ public class OCTreeEditor extends EditorWindow {
 		// ^ Node display
 		GUI.color = Color.green;
 		if ( GUI.Button ( new Rect ( right + currentRoot * 32 - 12, 56, 24, 12 ), "+" ) ) {
-			var newNode : OCNode = target.rootNodes [ currentRoot ].AddNode ();
-			var firstNode : OCNode = target.rootNodes [ currentRoot ].GetFirstNode(); 
+			OCNode newNode = target.rootNodes [ currentRoot ].AddNode ();
+			OCNode firstNode = target.rootNodes [ currentRoot ].GetFirstNode(); 
 
 			if ( firstNode.connectedTo [ i ] > 0 ) { 
 				newNode.connectedTo [ 0 ] = firstNode.connectedTo [ i ];
@@ -595,9 +608,9 @@ public class OCTreeEditor extends EditorWindow {
 		GUI.EndScrollView ();
 
 		if ( Event.current.type == EventType.MouseDown ) {
-			var cNode : OCNode = target.rootNodes [ currentRoot ].GetNode ( connectingNode );
+			OCNode cNode = target.rootNodes [ currentRoot ].GetNode ( connectingNode );
 			
-			if ( cNode ) {
+			if ( cNode != null ) {
 				cNode.connectedTo[connectingOutput] = 0;
 			}
 
