@@ -16,4 +16,4 @@ This is very handy if you're looking to make an RPG and don't want to code the b
 In the [wiki](https://github.com/mrzapp/openconvo/wiki)
 
 ### License
-<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">
+MIT
